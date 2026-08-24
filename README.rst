@@ -30,7 +30,7 @@ Our exemple notebooks include (non-exhaustive list):
 - 4D-Var in different observation scenarios on the Lorenz-63 system `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/Lorenz63_4D-Var.ipynb>`_
 - Ensemble Kalman Filter and Smoother on the Lorenz-96 system `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/Lorenz96_EnKF_EnKS.ipynb>`_
 - 4D-Var with a neural emulator of the Kolmogorov flow `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/KF_Emulator_4D-Var.ipynb>`_
-- Latent data assimilation on the Kuramoto-Sivashinsky system `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/Latent_4D-Var.ipynb.ipynb>`_
+- Latent data assimilation on the Kuramoto-Sivashinsky system `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/Latent_4D-Var.ipynb>`_
 - 4D-Var on the 2D Kuramoto-Sivashinsky system leveraging the Exponax library with a PyTorch-JAX bridge `here <https://github.com/anthony-frion/ADDA/tree/main/notebooks/Exponax_4D-Var-2D-KS.ipynb>`_
 
 --------------------------------------------
