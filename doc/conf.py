@@ -58,15 +58,6 @@ autodoc_mock_imports = [
     "jax",
 ]
 
-scikit-learn
-pandas
-numpy
-pylint
-pytorch-lightning
-tensordict
-torchmetrics
-torchvision
-torch
 autodoc_default_options = {
     "members": True,
     "member-order": "groupwise",
