@@ -41,6 +41,20 @@ templates_path = ["_templates"]
 exclude_patterns = ["../adda/_version.py"]
 autosummary_generate = True
 
+# --- Autodoc ---------------------------------------------------------------
+
+
+autodoc_default_options = {
+    "members": True,
+    "member-order": "groupwise",
+    "undoc-members": True,
+    "exclude-members": "__weakref__, __init__",
+    "show-inheritance": True,
+}
+
+autoclass_content = "class"
+ignore_module_all = False
+autodoc_inherit_docstrings = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
