@@ -1,9 +1,9 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
-.. image:: https://github.com/m-dml/ADDA/blob/main/interrogate.svg
+.. image:: https://raw.githubusercontent.com/m-dml/ADDA/main/interrogate.svg
 
-.. image:: https://github.com/m-dml/ADDA/blob/main/pipeline.svg
+.. image:: https://raw.githubusercontent.com/m-dml/ADDA/main/pipeline.svg
 
 ===============================
 Documentation of ADDA
@@ -16,7 +16,7 @@ Full documentation at https://m-dml.pages.hzdr.de/adda/
 
 Many pedagogical examples of usage can be found in the `notebooks folder <https://github.com/m-dml/ADDA/tree/main/notebooks>`_. For example, the following illustration is taken from our Lorenz-63 notebook.
 
-.. image:: L63_sc4dvar.png
+.. image:: https://raw.githubusercontent.com/m-dml/ADDA/main/L63_sc4dvar.png
 
 The data assimilation methods included in ADDA are:
 
@@ -25,7 +25,7 @@ The data assimilation methods included in ADDA are:
 - 4D-Var, in its hard-constraint and weak-constraint variants, with either a single window or a sliding window approach
 - Latent data assimilation, as in `this paper <https://www.science.org/doi/full/10.1126/sciadv.aea4248>`_
 
-Our exemple notebooks include (non-exhaustive list):
+Our example notebooks include (non-exhaustive list):
 
 - 4D-Var in different observation scenarios on the Lorenz-63 system `here <https://github.com/m-dml/ADDA/tree/main/notebooks/Lorenz63_4D-Var.ipynb>`_
 - Ensemble Kalman Filter and Smoother on the Lorenz-96 system `here <https://github.com/m-dml/ADDA/tree/main/notebooks/Lorenz96_EnKF_EnKS.ipynb>`_
