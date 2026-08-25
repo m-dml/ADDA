@@ -12,7 +12,7 @@ Documentation of ADDA
 ADDA (Automatic Differentiation for Data Assimilation) is a flexible PyTorch framework for performing data assimilation in various contexts.
 Its main distinguishing feature is the use of automatic differentiation (in PyTorch, with JAX compatibility) for 4D-Var methods.
 
-Full documentation at https://m-dml.pages.hzdr.de/adda/
+Full documentation at http://m-dml.org/ADDA/index.html
 
 Many pedagogical examples of usage can be found in the `notebooks folder <https://github.com/m-dml/ADDA/tree/main/notebooks>`_. For example, the following illustration is taken from our Lorenz-63 notebook.
 
