@@ -77,3 +77,15 @@ def cleanup():
         return
     print(f"Cleaning up _autosummary folder in {os.getcwd()}")
     shutil.rmtree(os.path.join(os.getcwd(), "source", "_autosummary"))
+
+def change_content_of_main_generated_index(app, what, name, obj, options, lines):
+    """Add text to the main index page."""
+    if what == "module":
+        if name == "adda":
+            lines.insert(0, "Api reference for ADDA.")
+            print("")
+
+
+def setup(app):
+    cleanup()
+    app.connect("autodoc-process-docstring", change_content_of_main_generated_index)
