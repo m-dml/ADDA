@@ -59,5 +59,21 @@ autodoc_inherit_docstrings = False
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_typo3_theme"
+
+# -- Intersphinx options
+#intersphinx_mapping = {
+#    "torch": ("https://pytorch.org/docs/stable/", None),
+#}
+
+html_logo = "images/m-dml_logo_banner_cropped.png"
+html_favicon = "images/m-dml_logo_dark.png"
+
+# -- Custom scripts ----------------------------------------------------------
+
+def cleanup():
+    """Delete the _autosummary folder before building the documentation."""
+    if not os.path.exists(os.path.join(os.getcwd(), "source", "_autosummary")):
+        return
+    print(f"Cleaning up _autosummary folder in {os.getcwd()}")
+    shutil.rmtree(os.path.join(os.getcwd(), "source", "_autosummary"))
