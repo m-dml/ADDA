@@ -44,6 +44,29 @@ autosummary_generate = True
 # --- Autodoc ---------------------------------------------------------------
 
 
+autodoc_mock_imports = [
+    "torch",
+    "numpy",
+    "pandas",
+    "sklearn",
+    "numpy",
+    "tensordict",
+    "textwrap",
+    "warnings",
+    "abc",
+    "scipy",
+    "jax",
+]
+
+scikit-learn
+pandas
+numpy
+pylint
+pytorch-lightning
+tensordict
+torchmetrics
+torchvision
+torch
 autodoc_default_options = {
     "members": True,
     "member-order": "groupwise",
