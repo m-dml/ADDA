@@ -1,9 +1,0 @@
-scikit-learn
-pandas
-numpy
-pylint
-pytorch-lightning
-tensordict
-torchmetrics
-torchvision
-torch
