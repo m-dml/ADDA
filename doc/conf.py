@@ -54,7 +54,7 @@ autodoc_default_options = {
 
 autoclass_content = "class"
 ignore_module_all = False
-autodoc_inherit_docstrings = False
+autodoc_inherit_docstrings = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
