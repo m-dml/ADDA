@@ -29,7 +29,7 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "sphinx.ext.viewcode",
     "sphinx.ext.extlinks",
-    #"sphinx.ext.intersphinx",
+    "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
     #"seed_intersphinx_mapping",
     "sphinx_typo3_theme",
