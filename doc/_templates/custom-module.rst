@@ -2,6 +2,9 @@
 
 
 .. automodule:: {{ fullname }}
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
     {% block modules %}
     {% if modules %}
