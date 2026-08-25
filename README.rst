@@ -46,3 +46,7 @@ To install you have to clone the repository and install it with pip:
    pip install -e .
 
 --------------------------------------------
+
+Citation
+--------
+The paper associated to our package is currently under review. You can find its Arxiv version `here <https://arxiv.org/abs/2608.23297>`_.
