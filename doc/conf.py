@@ -68,7 +68,7 @@ autodoc_default_options = {
 
 autoclass_content = "class"
 ignore_module_all = False
-autodoc_inherit_docstrings = True
+autodoc_inherit_docstrings = False
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -85,21 +85,21 @@ html_favicon = "images/m-dml_logo_dark.png"
 
 # -- Custom scripts ----------------------------------------------------------
 
-# def cleanup():
-#     """Delete the _autosummary folder before building the documentation."""
-#     if not os.path.exists(os.path.join(os.getcwd(), "source", "_autosummary")):
-#         return
-#     print(f"Cleaning up _autosummary folder in {os.getcwd()}")
-#     shutil.rmtree(os.path.join(os.getcwd(), "source", "_autosummary"))
+def cleanup():
+    """Delete the _autosummary folder before building the documentation."""
+    if not os.path.exists(os.path.join(os.getcwd(), "_sources", "_autosummary")):
+        return
+    print(f"Cleaning up _autosummary folder in {os.getcwd()}")
+    shutil.rmtree(os.path.join(os.getcwd(), "_sources", "_autosummary"))
 
-# def change_content_of_main_generated_index(app, what, name, obj, options, lines):
-#     """Add text to the main index page."""
-#     if what == "module":
-#         if name == "adda":
-#             lines.insert(0, "Api reference for ADDA.")
-#             print("")
+def change_content_of_main_generated_index(app, what, name, obj, options, lines):
+    """Add text to the main index page."""
+    if what == "module":
+        if name == "adda":
+            lines.insert(0, "API reference for ADDA.")
+            print("")
 
 
-# def setup(app):
-#     cleanup()
-#     app.connect("autodoc-process-docstring", change_content_of_main_generated_index)
+def setup(app):
+    cleanup()
+    app.connect("autodoc-process-docstring", change_content_of_main_generated_index)
