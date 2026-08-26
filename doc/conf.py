@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'adda'
+project = 'ADDA'
 copyright = "2026, m-dml team"
 author = "m-dml team"
 release = "0.1.0"
