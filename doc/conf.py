@@ -99,7 +99,6 @@ def change_content_of_main_generated_index(app, what, name, obj, options, lines)
             lines.insert(0, "API reference for ADDA.")
             print("")
 
-
 def setup(app):
     cleanup()
     app.connect("autodoc-process-docstring", change_content_of_main_generated_index)
