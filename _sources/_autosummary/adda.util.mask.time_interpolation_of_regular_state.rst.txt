@@ -1,0 +1,6 @@
+time\_interpolation\_of\_regular\_state
+=======================================
+
+.. currentmodule:: adda.util.mask
+
+.. autofunction:: time_interpolation_of_regular_state

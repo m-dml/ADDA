@@ -1,0 +1,6 @@
+same\_shape
+===========
+
+.. currentmodule:: adda.util.state_space
+
+.. autofunction:: same_shape

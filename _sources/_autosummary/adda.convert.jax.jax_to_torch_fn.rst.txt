@@ -1,0 +1,6 @@
+jax\_to\_torch\_fn
+==================
+
+.. currentmodule:: adda.convert.jax
+
+.. autofunction:: jax_to_torch_fn

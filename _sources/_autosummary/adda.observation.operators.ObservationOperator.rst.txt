@@ -1,0 +1,27 @@
+ObservationOperator
+===================
+
+.. currentmodule:: adda.observation.operators
+
+.. autoclass:: ObservationOperator
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ObservationOperator.__init__
+      ~ObservationOperator.conditional_mean
+      ~ObservationOperator.linearize
+      ~ObservationOperator.log_prob
+      ~ObservationOperator.restrict_time_domain
+      ~ObservationOperator.sample
+   
+   
+
+   
+   
+   

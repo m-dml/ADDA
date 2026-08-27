@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.convert.jax &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.convert.jax</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">jax</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+
+
+<div class="viewcode-block" id="j2t">
+<a class="viewcode-back" href="../../../_autosummary/adda.convert.jax.j2t.html#adda.convert.jax.j2t">[docs]</a>
+<span class="k">def</span> <span class="nf">j2t</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a JAX array to a PyTorch tensor using DLPack.&quot;&quot;&quot;</span>
+    <span class="c1"># Ensure the input is a JAX array</span>
+    <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s2">&quot;__dlpack__&quot;</span><span class="p">),</span> <span class="s2">&quot;Input must be a JAX array.&quot;</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_dlpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="t2j">
+<a class="viewcode-back" href="../../../_autosummary/adda.convert.jax.t2j.html#adda.convert.jax.t2j">[docs]</a>
+<span class="k">def</span> <span class="nf">t2j</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a PyTorch tensor to a JAX array using DLPack.&quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">x</span><span class="o">.</span><span class="n">is_contiguous</span><span class="p">():</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+    <span class="c1"># Ensure the input is a PyTorch tensor</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;Input must be a PyTorch tensor.&quot;</span>
+    <span class="k">return</span> <span class="n">jax</span><span class="o">.</span><span class="n">dlpack</span><span class="o">.</span><span class="n">from_dlpack</span><span class="p">(</span><span class="n">x</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_forward_impl</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward pass implementation for the JAX function.</span>
+
+<span class="sd">    So we can jit compile it and use it in the backward pass.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">jax_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_backward_impl</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">args_and_cot</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Backward pass implementation for the JAX function.</span>
+
+<span class="sd">    Again, we jit compile it so we can use it in the backward pass.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">cot</span> <span class="o">=</span> <span class="n">args_and_cot</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vjp</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+    <span class="n">grads</span> <span class="o">=</span> <span class="n">vjp_fn</span><span class="p">(</span><span class="n">cot</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grads</span>
+
+
+<span class="n">_forward</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_forward_impl</span><span class="p">,</span> <span class="n">static_argnums</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">_backward</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">jit</span><span class="p">(</span><span class="n">_backward_impl</span><span class="p">,</span> <span class="n">static_argnums</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_JaxFunction</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A custom PyTorch autograd function that wraps a JAX function.</span>
+
+<span class="sd">    For more details, see https://docs.pytorch.org/docs/2.13/notes/extending.html</span>
+<span class="sd">        and https://docs.jax.dev/en/latest/jax-primitives.html</span>
+<span class="sd">    This allows the JAX function to be used in a PyTorch computation graph,</span>
+<span class="sd">    enabling automatic differentiation and gradient computation.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        jax_fn: A JAX function to be wrapped. This function should take JAX</span>
+<span class="sd">          arrays as input and return a JAX array as output.</span>
+<span class="sd">        *torch_args: A variable number of PyTorch tensors that will be converted</span>
+<span class="sd">          to JAX arrays and passed to the JAX function.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        A PyTorch tensor that is the result of applying the JAX function to the</span>
+<span class="sd">        converted input tensors. The output tensor will be part of the PyTorch</span>
+<span class="sd">        computation graph, allowing for gradient computation through the JAX function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">torch_args</span><span class="p">):</span>
+        <span class="n">jax_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">t2j</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">torch_args</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">_forward</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">jax_args</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">jax_fn</span> <span class="o">=</span> <span class="n">jax_fn</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">jax_args</span> <span class="o">=</span> <span class="n">jax_args</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">save_for_backward</span><span class="p">(</span><span class="o">*</span><span class="n">torch_args</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">j2t</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">*</span><span class="n">grad_outputs</span><span class="p">):</span>
+        <span class="n">jax_args</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">jax_args</span>
+        <span class="n">cot</span> <span class="o">=</span> <span class="n">t2j</span><span class="p">(</span><span class="n">grad_outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">jax_grads</span> <span class="o">=</span> <span class="n">_backward</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">jax_args</span><span class="p">,</span> <span class="n">cot</span><span class="p">)</span>
+        <span class="n">torch_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">j2t</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">jax_grads</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">+</span> <span class="n">torch_grads</span>
+
+
+<div class="viewcode-block" id="jax_to_torch_fn">
+<a class="viewcode-back" href="../../../_autosummary/adda.convert.jax.jax_to_torch_fn.html#adda.convert.jax.jax_to_torch_fn">[docs]</a>
+<span class="k">def</span> <span class="nf">jax_to_torch_fn</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a JAX function for use in PyTorch.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">torch_args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_JaxFunction</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">torch_args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped</span></div>
+
+
+
+<span class="k">class</span> <span class="nc">_JaxFunctionEagerVjp</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">Function</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A custom PyTorch autograd function that wraps a JAX function and computes gradients using eager VJP (vector-</span>
+<span class="sd">    Jacobian product).</span>
+
+<span class="sd">    We jit the Jax function separately for this one. For more details, see</span>
+<span class="sd">    https://docs.pytorch.org/docs/2.13/notes/extending.html</span>
+<span class="sd">    and https://docs.jax.dev/en/latest/jax-primitives.html</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">torch_args</span><span class="p">):</span>
+        <span class="n">jax_args</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">t2j</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">torch_args</span><span class="p">)</span>
+        <span class="n">out</span><span class="p">,</span> <span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vjp</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">jax_args</span><span class="p">)</span>
+        <span class="n">ctx</span><span class="o">.</span><span class="n">vjp_fn</span> <span class="o">=</span> <span class="n">vjp_fn</span>
+        <span class="k">return</span> <span class="n">j2t</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">backward</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="o">*</span><span class="n">grad_outputs</span><span class="p">):</span>
+        <span class="n">cot</span> <span class="o">=</span> <span class="n">t2j</span><span class="p">(</span><span class="n">grad_outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">jax_grads</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">vjp_fn</span><span class="p">(</span><span class="n">cot</span><span class="p">)</span>
+        <span class="n">torch_grads</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">j2t</span><span class="p">(</span><span class="n">g</span><span class="p">)</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">jax_grads</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="kc">None</span><span class="p">,)</span> <span class="o">+</span> <span class="n">torch_grads</span>
+
+
+<div class="viewcode-block" id="jax_to_torch_fn_eager_vjp">
+<a class="viewcode-back" href="../../../_autosummary/adda.convert.jax.jax_to_torch_fn_eager_vjp.html#adda.convert.jax.jax_to_torch_fn_eager_vjp">[docs]</a>
+<span class="k">def</span> <span class="nf">jax_to_torch_fn_eager_vjp</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrap a JAX function for use in PyTorch with eager VJP (vector-Jacobian product) computation.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">wrapped</span><span class="p">(</span><span class="o">*</span><span class="n">torch_args</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_JaxFunctionEagerVjp</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">jax_fn</span><span class="p">,</span> <span class="o">*</span><span class="n">torch_args</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapped</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

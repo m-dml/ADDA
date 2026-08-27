@@ -1,0 +1,44 @@
+smoother
+========
+
+
+.. automodule:: adda.kalman.smoother
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      fixed_lag_kalman_smoother
+      kalman_smoother
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      FixedLagKalmanSmoother
+      KalmanSmoother
+      RTSKalmanSmoother
+   
+   
+
+   
+   
+   

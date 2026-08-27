@@ -1,0 +1,6 @@
+interp\_initialization
+======================
+
+.. currentmodule:: adda.util.initialization
+
+.. autofunction:: interp_initialization

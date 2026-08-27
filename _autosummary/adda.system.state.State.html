@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>State &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="util" href="adda.util.html" />
+    <link rel="prev" title="check_time_axis" href="adda.system.state.check_time_axis.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="state">
+<h1>State<a class="headerlink" href="#state" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="adda.system.state.State">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adda.system.state.</span></span><span class="sig-name descname"><span class="pre">State</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">tensordict.TensorDict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State" title="Link to this definition">¶</a></dt>
+<dd><p>Object representing a system state (trajectory).</p>
+<p>Its fields are a Tensordict with two shared (batch) dimensions: the batch dimension, followed by the time dimension.
+It also contains a time axis.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(x[, time_axis])</p></td>
+<td><p>Initialize system state from Tensor or TensorDict input.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.cat" title="adda.system.state.State.cat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cat</span></code></a>(other, dim)</p></td>
+<td><p>Concatenate this State with another State, either in the batch dim (0) or the time dim (1)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.clone" title="adda.system.state.State.clone"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clone</span></code></a>()</p></td>
+<td><p>Clone State.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.detach" title="adda.system.state.State.detach"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detach</span></code></a>()</p></td>
+<td><p>Detach from computation graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.expand_time" title="adda.system.state.State.expand_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">expand_time</span></code></a>(time_axis)</p></td>
+<td><p>Returns a new state with an expanded batch size and time axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.fill_" title="adda.system.state.State.fill_"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fill_</span></code></a>(val)</p></td>
+<td><p>Fill values of state trajectory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.mean_on_batch_axis" title="adda.system.state.State.mean_on_batch_axis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mean_on_batch_axis</span></code></a>()</p></td>
+<td><p>Returns a new State with a batch size of 1, corresponding to the average of all batch elements of the input</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.n_fields" title="adda.system.state.State.n_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">n_fields</span></code></a>()</p></td>
+<td><p>Returns the number of fields in the 'fields' attribute of this State object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.requires_grad_" title="adda.system.state.State.requires_grad_"><code class="xref py py-obj docutils literal notranslate"><span class="pre">requires_grad_</span></code></a>([requires_grad])</p></td>
+<td><p>Returns a copy of the State object in which the chosen grad required is applied to all attributes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.restrict_fields" title="adda.system.state.State.restrict_fields"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restrict_fields</span></code></a>(fields)</p></td>
+<td><p>Returns a new State with a subset of the original fields.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.restrict_time_domain" title="adda.system.state.State.restrict_time_domain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restrict_time_domain</span></code></a>(tmin, tmax)</p></td>
+<td><p>Returns a new State with a restricted time axis.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.system.state.State.to" title="adda.system.state.State.to"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Returns a copy of the State with its tensordict set as specified by the arguments.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Attributes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.system.state.State.device" title="adda.system.state.State.device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">device</span></code></a></p></td>
+<td><p>Device of the fields.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.cat">
+<span class="sig-name descname"><span class="pre">cat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.cat"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.cat" title="Link to this definition">¶</a></dt>
+<dd><p>Concatenate this State with another State, either in the batch dim (0) or the time dim (1)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.clone">
+<span class="sig-name descname"><span class="pre">clone</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.clone"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.clone" title="Link to this definition">¶</a></dt>
+<dd><p>Clone State. See torch.Tensor.clone().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>cloned State.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#adda.system.state.State" title="adda.system.state.State">State</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.detach">
+<span class="sig-name descname"><span class="pre">detach</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.detach"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.detach" title="Link to this definition">¶</a></dt>
+<dd><p>Detach from computation graph. See torch.Tensor.detach().</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>detached State.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#adda.system.state.State" title="adda.system.state.State">State</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.expand_time">
+<span class="sig-name descname"><span class="pre">expand_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_axis</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.expand_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.expand_time" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new state with an expanded batch size and time axis.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.fill_">
+<span class="sig-name descname"><span class="pre">fill_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.fill_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.fill_" title="Link to this definition">¶</a></dt>
+<dd><p>Fill values of state trajectory. See <a href="#id1"><span class="problematic" id="id2">fill_</span></a> methods of Tensor and TensorDict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<em>Union</em><em>[</em><em>float</em><em>, </em><em>Dict</em><em>]</em>) – Value to fill in. Can be a dict with an entry for each field, or a single float.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>State with filled in values.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#adda.system.state.State" title="adda.system.state.State">State</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.mean_on_batch_axis">
+<span class="sig-name descname"><span class="pre">mean_on_batch_axis</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.mean_on_batch_axis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.mean_on_batch_axis" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new State with a batch size of 1, corresponding to the average of all batch elements of the input</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.n_fields">
+<span class="sig-name descname"><span class="pre">n_fields</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.n_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.n_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Returns the number of fields in the ‘fields’ attribute of this State object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.requires_grad_">
+<span class="sig-name descname"><span class="pre">requires_grad_</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requires_grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.requires_grad_"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.requires_grad_" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a copy of the State object in which the chosen grad required is applied to all attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.restrict_fields">
+<span class="sig-name descname"><span class="pre">restrict_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.restrict_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.restrict_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new State with a subset of the original fields.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fields</strong> (<em>iterable</em>) – a subset of the keys corresponding to the State’s fields</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.restrict_time_domain">
+<span class="sig-name descname"><span class="pre">restrict_time_domain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tmin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tmax</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.restrict_time_domain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.restrict_time_domain" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a new State with a restricted time axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tmin</strong> (<em>float</em>) – beginning of new time domain</p></li>
+<li><p><strong>tmax</strong> (<em>float</em>) – end of new time domain</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.system.state.State.to">
+<span class="sig-name descname"><span class="pre">to</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/system/state.html#State.to"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.system.state.State.to" title="Link to this definition">¶</a></dt>
+<dd><p>Returns a copy of the State with its tensordict set as specified by the arguments.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="adda.system.state.State.device">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">device</span></span><a class="headerlink" href="#adda.system.state.State.device" title="Link to this definition">¶</a></dt>
+<dd><p>Device of the fields.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="adda.html">adda</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adda.convert.html">convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.ensemble.html">ensemble</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.kalman.html">kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.observation.html">observation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.probability.html">probability</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="adda.system.html">system</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="adda.system.dynamics.html">dynamics</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="adda.system.state.html">state</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="adda.system.state.check_time_axis.html">check_time_axis</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">State</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#adda.system.state.State"><code class="docutils literal notranslate"><span class="pre">State</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.cat"><code class="docutils literal notranslate"><span class="pre">cat()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.clone"><code class="docutils literal notranslate"><span class="pre">clone()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.detach"><code class="docutils literal notranslate"><span class="pre">detach()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.expand_time"><code class="docutils literal notranslate"><span class="pre">expand_time()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.fill_"><code class="docutils literal notranslate"><span class="pre">fill_()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.mean_on_batch_axis"><code class="docutils literal notranslate"><span class="pre">mean_on_batch_axis()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.n_fields"><code class="docutils literal notranslate"><span class="pre">n_fields()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.requires_grad_"><code class="docutils literal notranslate"><span class="pre">requires_grad_()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.restrict_fields"><code class="docutils literal notranslate"><span class="pre">restrict_fields()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.restrict_time_domain"><code class="docutils literal notranslate"><span class="pre">restrict_time_domain()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.to"><code class="docutils literal notranslate"><span class="pre">to()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.system.state.State.device"><code class="docutils literal notranslate"><span class="pre">device</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="adda.util.html">util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.variational.html">variational</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="adda.html">adda</a><ul>
+  <li><a href="adda.system.html">system</a><ul>
+  <li><a href="adda.system.state.html">state</a><ul>
+      <li>Previous: <a href="adda.system.state.check_time_axis.html" title="previous chapter">check_time_axis</a></li>
+      <li>Next: <a href="adda.util.html" title="next chapter">util</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/adda.system.state.State.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

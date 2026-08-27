@@ -1,0 +1,6 @@
+rollout
+=======
+
+.. currentmodule:: adda.util.state_space
+
+.. autofunction:: rollout

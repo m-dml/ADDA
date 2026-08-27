@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.ensemble.enkf &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.ensemble.enkf</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">adda.ensemble.enks</span> <span class="kn">import</span> <span class="n">EnKS</span>
+<span class="kn">from</span> <span class="nn">adda.observation.data</span> <span class="kn">import</span> <span class="n">ObservationSet</span>
+<span class="kn">from</span> <span class="nn">adda.observation.operators</span> <span class="kn">import</span> <span class="n">ObservationOperator</span>
+<span class="kn">from</span> <span class="nn">adda.system.state</span> <span class="kn">import</span> <span class="n">State</span>
+
+
+<div class="viewcode-block" id="EnKF">
+<a class="viewcode-back" href="../../../_autosummary/adda.ensemble.enkf.EnKF.html#adda.ensemble.enkf.EnKF">[docs]</a>
+<span class="k">class</span> <span class="nc">EnKF</span><span class="p">(</span><span class="n">EnKS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensemble Kalman Filter implementation for data assimilation.</span>
+
+<span class="sd">    We consider an EnKF to be nothing more than an EnKS with time lag 1.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_members</span><span class="p">,</span> <span class="n">n_variables</span><span class="p">,</span> <span class="n">initial_ensemble_std</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">inflation</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">linearize</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the EnKF.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            n_members (int): Number of ensemble members</span>
+<span class="sd">            n_variables (int): Number of state variables</span>
+<span class="sd">            initial_ensemble_std (Union[float, Tensor]): Standard deviation for ensemble perturbations.</span>
+<span class="sd">                If it is a float, assume a spherical Gaussian. If it is a Tensor, assume a diagonal Gaussian.</span>
+<span class="sd">            inflation (float): Inflation factor to apply to the ensemble after each analysis step</span>
+<span class="sd">            linearize (bool): Indicates whether to linearize the observation operator or use a nonlinear approximation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">lag</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># we see an EnKF as an EnKS with lag 1</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">n_members</span><span class="o">=</span><span class="n">n_members</span><span class="p">,</span>
+            <span class="n">n_variables</span><span class="o">=</span><span class="n">n_variables</span><span class="p">,</span>
+            <span class="n">lag</span><span class="o">=</span><span class="n">lag</span><span class="p">,</span>
+            <span class="n">initial_ensemble_std</span><span class="o">=</span><span class="n">initial_ensemble_std</span><span class="p">,</span>
+            <span class="n">inflation</span><span class="o">=</span><span class="n">inflation</span><span class="p">,</span>
+            <span class="n">linearize</span><span class="o">=</span><span class="n">linearize</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="enkf">
+<a class="viewcode-back" href="../../../_autosummary/adda.ensemble.enkf.enkf.html#adda.ensemble.enkf.enkf">[docs]</a>
+<span class="k">def</span> <span class="nf">enkf</span><span class="p">(</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="n">ObservationSet</span><span class="p">,</span>
+    <span class="n">obs_op</span><span class="p">:</span> <span class="n">ObservationOperator</span><span class="p">,</span>
+    <span class="n">x_init</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_members</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">20</span><span class="p">,</span>
+    <span class="n">initial_ensemble_std</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">inflation</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+    <span class="n">linearize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform ensemble Kalman filter data assimilation using EnKF.assimilate() method.</span>
+
+<span class="sd">    This function is a wrapper around the EnKF.assimilate() method for backwards compatibility</span>
+<span class="sd">    and consistent API design.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m_dyn (Callable): Model dynamics function</span>
+<span class="sd">        observations (ObservationSet): Set of observations to be assimilated</span>
+<span class="sd">        obs_op (ObservationOperator): Observation operator used to map between system states and observations</span>
+<span class="sd">        x_init (State): Initial state for the ensemble mean</span>
+<span class="sd">        dynamic_inputs (State): Extra inputs defined for each input state (e.g. TOA)</span>
+<span class="sd">        static_inputs (State): Extra inputs that don&#39;t vary over time (e.g. bathymetry)</span>
+<span class="sd">        n_members (int): Number of ensemble members</span>
+<span class="sd">        initial_ensemble_std (Union[float, Tensor]): Standard deviation for ensemble perturbations.</span>
+<span class="sd">            If it is a float, assume a spherical Gaussian. If it is a Tensor, assume a diagonal Gaussian.</span>
+<span class="sd">        inflation (float): Inflation factor to apply  on the ensemble after each analysis step</span>
+<span class="sd">        linearize (bool): Indicates whether to linearize the observation operator or use a nonlinear approximation</span>
+<span class="sd">        verbose (bool): If True, print detailed progress and diagnostic information</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">            - ensemble_state (State): Full ensemble State object with history (Default option)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Simply call the assimilate method of the EnKF object</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="p">(</span><span class="n">State</span><span class="p">)),</span> <span class="s2">&quot;x_init must be a State&quot;</span>
+    <span class="k">assert</span> <span class="n">x_init</span><span class="o">.</span><span class="n">n_fields</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Only states with one field are supported for EnKF now.&quot;</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="n">enkf_obj</span> <span class="o">=</span> <span class="n">EnKF</span><span class="p">(</span>
+            <span class="n">n_members</span><span class="o">=</span><span class="n">n_members</span><span class="p">,</span>
+            <span class="n">n_variables</span><span class="o">=</span><span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">initial_ensemble_std</span><span class="o">=</span><span class="n">initial_ensemble_std</span><span class="p">,</span>
+            <span class="n">inflation</span><span class="o">=</span><span class="n">inflation</span><span class="p">,</span>
+            <span class="n">linearize</span><span class="o">=</span><span class="n">linearize</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">enkf_obj</span><span class="o">.</span><span class="n">assimilate</span><span class="p">(</span>
+            <span class="n">m_dyn</span><span class="o">=</span><span class="n">m_dyn</span><span class="p">,</span>
+            <span class="n">observations</span><span class="o">=</span><span class="n">observations</span><span class="p">,</span>
+            <span class="n">obs_op</span><span class="o">=</span><span class="n">obs_op</span><span class="p">,</span>
+            <span class="n">x_init</span><span class="o">=</span><span class="n">x_init</span><span class="p">,</span>
+            <span class="n">dynamic_inputs</span><span class="o">=</span><span class="n">dynamic_inputs</span><span class="p">,</span>
+            <span class="n">static_inputs</span><span class="o">=</span><span class="n">static_inputs</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

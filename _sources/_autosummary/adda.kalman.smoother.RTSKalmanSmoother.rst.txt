@@ -1,0 +1,28 @@
+RTSKalmanSmoother
+=================
+
+.. currentmodule:: adda.kalman.smoother
+
+.. autoclass:: RTSKalmanSmoother
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~RTSKalmanSmoother.__init__
+      ~RTSKalmanSmoother.analysis_step
+      ~RTSKalmanSmoother.assimilate
+      ~RTSKalmanSmoother.backward_pass
+      ~RTSKalmanSmoother.compute_kalman_gain
+      ~RTSKalmanSmoother.forecast_step
+      ~RTSKalmanSmoother.forward_pass
+   
+   
+
+   
+   
+   

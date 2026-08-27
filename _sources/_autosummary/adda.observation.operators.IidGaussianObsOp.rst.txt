@@ -1,0 +1,28 @@
+IidGaussianObsOp
+================
+
+.. currentmodule:: adda.observation.operators
+
+.. autoclass:: IidGaussianObsOp
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~IidGaussianObsOp.__init__
+      ~IidGaussianObsOp.conditional_mean
+      ~IidGaussianObsOp.linearize
+      ~IidGaussianObsOp.log_prob
+      ~IidGaussianObsOp.restrict_time_domain
+      ~IidGaussianObsOp.sample
+      ~IidGaussianObsOp.to
+   
+   
+
+   
+   
+   

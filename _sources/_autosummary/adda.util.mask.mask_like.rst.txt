@@ -1,0 +1,6 @@
+mask\_like
+==========
+
+.. currentmodule:: adda.util.mask
+
+.. autofunction:: mask_like

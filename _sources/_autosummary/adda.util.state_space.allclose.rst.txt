@@ -1,0 +1,6 @@
+allclose
+========
+
+.. currentmodule:: adda.util.state_space
+
+.. autofunction:: allclose

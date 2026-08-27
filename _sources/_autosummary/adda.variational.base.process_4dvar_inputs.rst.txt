@@ -1,0 +1,6 @@
+process\_4dvar\_inputs
+======================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: process_4dvar_inputs

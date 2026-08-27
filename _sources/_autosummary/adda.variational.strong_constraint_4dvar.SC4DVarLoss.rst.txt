@@ -1,0 +1,23 @@
+SC4DVarLoss
+===========
+
+.. currentmodule:: adda.variational.strong_constraint_4dvar
+
+.. autoclass:: SC4DVarLoss
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~SC4DVarLoss.__init__
+      ~SC4DVarLoss.forward
+   
+   
+
+   
+   
+   

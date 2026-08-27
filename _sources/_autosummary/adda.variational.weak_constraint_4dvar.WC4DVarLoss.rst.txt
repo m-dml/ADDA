@@ -1,0 +1,23 @@
+WC4DVarLoss
+===========
+
+.. currentmodule:: adda.variational.weak_constraint_4dvar
+
+.. autoclass:: WC4DVarLoss
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~WC4DVarLoss.__init__
+      ~WC4DVarLoss.forward
+   
+   
+
+   
+   
+   

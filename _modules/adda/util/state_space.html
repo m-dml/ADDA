@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.util.state_space &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.util.state_space</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">adda.system.state</span> <span class="kn">import</span> <span class="n">State</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="rollout">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.state_space.rollout.html#adda.util.state_space.rollout">[docs]</a>
+<span class="k">def</span> <span class="nf">rollout</span><span class="p">(</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">output_times</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">x0</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store_every</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">State</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rollout a time-stepping function over a set of times.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        m_dyn (Callable): time stepping function with inputs x, dt, dynamic_inputs, static_inputs</span>
+<span class="sd">        x0 (State): initial state, a tensor or tensordict, with a batch dimension</span>
+<span class="sd">        output_times (torch.Tensor): times relative to initialization to produce output. must be increasing.</span>
+<span class="sd">                                    optionally includes 0.</span>
+<span class="sd">        dynamic_inputs (State): extra inputs (e.g. BCs, forcing) for each instance of calling the time</span>
+<span class="sd">                                    stepping function.</span>
+<span class="sd">        static_inputs (State): extra inputs (e.g. bathymetry) for each instance of calling the time</span>
+<span class="sd">                                    stepping function.</span>
+<span class="sd">        store_every (int): if specified, indicates at which frequency the states should be stored during the rollout</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x (State): states at each output time. First dimension is batch, second is time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">x0</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;rollout supports batching, but requires a singleton time dimension&quot;</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">x0</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">output_ic</span> <span class="o">=</span> <span class="n">output_times</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">t0</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">output_ic</span><span class="p">:</span>
+        <span class="n">output_times</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">1</span><span class="p">,),</span> <span class="n">t0</span><span class="p">),</span> <span class="n">output_times</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">dt_all</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">output_times</span><span class="p">)</span>
+
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x0</span>
+    <span class="n">x_all</span> <span class="o">=</span> <span class="p">[</span><span class="n">x0</span><span class="p">]</span> <span class="k">if</span> <span class="n">output_ic</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">dt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dt_all</span><span class="p">):</span>
+        <span class="n">di</span> <span class="o">=</span> <span class="n">dynamic_inputs</span><span class="p">[:,</span> <span class="n">i</span> <span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">dynamic_inputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">m_dyn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">di</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">store_every</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">store_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="n">time_axis</span> <span class="o">=</span> <span class="n">output_times</span> <span class="k">if</span> <span class="n">output_ic</span> <span class="k">else</span> <span class="n">output_times</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">if</span> <span class="n">store_every</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">time_axis</span> <span class="o">=</span> <span class="n">time_axis</span><span class="p">[</span><span class="n">store_every</span> <span class="o">-</span> <span class="mi">1</span> <span class="p">::</span> <span class="n">store_every</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">State</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">fields</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">x_all</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">time_axis</span><span class="o">=</span><span class="n">time_axis</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="allclose">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.state_space.allclose.html#adda.util.state_space.allclose">[docs]</a>
+<span class="k">def</span> <span class="nf">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span> <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wrapper on torch.allclose() to support TensorDict.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (State): the first data structure</span>
+<span class="sd">        y (State): the second data structure</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        bool: result</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">TensorDict</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">x</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">==</span> <span class="n">y</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="s2">&quot;key mismatch&quot;</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">y</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="weighted_sse">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.state_space.weighted_sse.html#adda.util.state_space.weighted_sse">[docs]</a>
+<span class="k">def</span> <span class="nf">weighted_sse</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">mu</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">sigma</span><span class="p">:</span> <span class="n">TensorDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute weighted sum of squared errors (x - mu) / sigma ** 2.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (TensorDict): variable(s) for which to calculate the weighted sse</span>
+<span class="sd">        mu (TensorDict): target for x</span>
+<span class="sd">        sigma (TensorDict, optional): variance (or inverse weight) for each residual</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wsse</span> <span class="o">=</span> <span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="n">nbatchdims</span> <span class="o">=</span> <span class="n">wsse</span><span class="o">.</span><span class="n">ndim</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mu</span> <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span>
+    <span class="n">zsq</span> <span class="o">=</span> <span class="n">z</span> <span class="o">*</span> <span class="n">z</span>
+    <span class="n">wsse</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">z</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dims</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">nbatchdims</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">wsse</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wsse</span> <span class="o">=</span> <span class="n">zsq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dims</span><span class="p">)</span> <span class="k">if</span> <span class="n">dims</span> <span class="k">else</span> <span class="n">zsq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">wsse</span> <span class="o">+=</span> <span class="n">zsq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="n">dims</span><span class="p">)</span> <span class="k">if</span> <span class="n">dims</span> <span class="k">else</span> <span class="n">zsq</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">wsse</span></div>
+
+
+
+<div class="viewcode-block" id="same_shape">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.state_space.same_shape.html#adda.util.state_space.same_shape">[docs]</a>
+<span class="k">def</span> <span class="nf">same_shape</span><span class="p">(</span><span class="n">x1</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span> <span class="n">x2</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check whether two TensorDicts have the same dimensions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x1: first TD</span>
+<span class="sd">        x2: second TD</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        is_same (bool): True if the TDs the same batch/spatial dimensions (for all keys as needed).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x1</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x2</span><span class="o">.</span><span class="n">shape</span> <span class="ow">or</span> <span class="n">x1</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="n">x2</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">x1</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">x1</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="o">!=</span> <span class="n">x2</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

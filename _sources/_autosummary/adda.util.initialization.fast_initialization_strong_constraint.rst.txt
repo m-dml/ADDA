@@ -1,0 +1,6 @@
+fast\_initialization\_strong\_constraint
+========================================
+
+.. currentmodule:: adda.util.initialization
+
+.. autofunction:: fast_initialization_strong_constraint

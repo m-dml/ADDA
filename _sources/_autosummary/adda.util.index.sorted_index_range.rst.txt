@@ -1,0 +1,6 @@
+sorted\_index\_range
+====================
+
+.. currentmodule:: adda.util.index
+
+.. autofunction:: sorted_index_range

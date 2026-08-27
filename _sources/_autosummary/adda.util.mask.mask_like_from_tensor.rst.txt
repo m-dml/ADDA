@@ -1,0 +1,6 @@
+mask\_like\_from\_tensor
+========================
+
+.. currentmodule:: adda.util.mask
+
+.. autofunction:: mask_like_from_tensor

@@ -1,0 +1,41 @@
+enkf
+====
+
+
+.. automodule:: adda.ensemble.enkf
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      enkf
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      EnKF
+   
+   
+
+   
+   
+   

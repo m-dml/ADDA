@@ -1,0 +1,36 @@
+jax
+===
+
+
+.. automodule:: adda.convert.jax
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      j2t
+      jax_to_torch_fn
+      jax_to_torch_fn_eager_vjp
+      t2j
+   
+   
+
+   
+   
+   
+
+   
+   
+   

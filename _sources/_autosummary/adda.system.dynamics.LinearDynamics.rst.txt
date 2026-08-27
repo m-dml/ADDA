@@ -1,0 +1,22 @@
+LinearDynamics
+==============
+
+.. currentmodule:: adda.system.dynamics
+
+.. autoclass:: LinearDynamics
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LinearDynamics.__init__
+   
+   
+
+   
+   
+   

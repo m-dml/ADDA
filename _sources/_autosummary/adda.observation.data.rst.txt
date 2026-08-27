@@ -1,0 +1,38 @@
+data
+====
+
+
+.. automodule:: adda.observation.data
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      FullStateObservationSet
+      GriddedPointObservationSet
+      MaskedStateObservationSet
+      MultipleObservationSet
+      ObservationSet
+      PointObservationSet
+   
+   
+
+   
+   
+   

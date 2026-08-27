@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>state_space &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="allclose" href="adda.util.state_space.allclose.html" />
+    <link rel="prev" title="optimize" href="adda.util.optimization.optimize.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-adda.util.state_space">
+<span id="state-space"></span><h1>state_space<a class="headerlink" href="#module-adda.util.state_space" title="Link to this heading">¶</a></h1>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="adda.util.state_space.allclose.html#adda.util.state_space.allclose" title="adda.util.state_space.allclose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">allclose</span></code></a>(x, y, **kwargs)</p></td>
+<td><p>Wrapper on torch.allclose() to support TensorDict.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="adda.util.state_space.rollout.html#adda.util.state_space.rollout" title="adda.util.state_space.rollout"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rollout</span></code></a>(m_dyn, output_times, x0[, ...])</p></td>
+<td><p>Rollout a time-stepping function over a set of times.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="adda.util.state_space.same_shape.html#adda.util.state_space.same_shape" title="adda.util.state_space.same_shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">same_shape</span></code></a>(x1, x2)</p></td>
+<td><p>Check whether two TensorDicts have the same dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="adda.util.state_space.weighted_sse.html#adda.util.state_space.weighted_sse" title="adda.util.state_space.weighted_sse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">weighted_sse</span></code></a>(x, mu[, sigma])</p></td>
+<td><p>Compute weighted sum of squared errors (x - mu) / sigma ** 2.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="adda.html">adda</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adda.convert.html">convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.ensemble.html">ensemble</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.kalman.html">kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.observation.html">observation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.probability.html">probability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.system.html">system</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="adda.util.html">util</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="adda.util.data.html">data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adda.util.index.html">index</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adda.util.initialization.html">initialization</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adda.util.mask.html">mask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adda.util.optimization.html">optimization</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">state_space</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="adda.util.state_space.allclose.html">allclose</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.util.state_space.rollout.html">rollout</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.util.state_space.same_shape.html">same_shape</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.util.state_space.weighted_sse.html">weighted_sse</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="adda.util.typing.html">typing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="adda.variational.html">variational</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="adda.html">adda</a><ul>
+  <li><a href="adda.util.html">util</a><ul>
+      <li>Previous: <a href="adda.util.optimization.optimize.html" title="previous chapter">optimize</a></li>
+      <li>Next: <a href="adda.util.state_space.allclose.html" title="next chapter">allclose</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/adda.util.state_space.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

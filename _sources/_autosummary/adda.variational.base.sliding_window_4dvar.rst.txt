@@ -1,0 +1,6 @@
+sliding\_window\_4dvar
+======================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: sliding_window_4dvar

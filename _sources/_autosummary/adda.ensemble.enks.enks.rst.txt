@@ -1,0 +1,6 @@
+enks
+====
+
+.. currentmodule:: adda.ensemble.enks
+
+.. autofunction:: enks

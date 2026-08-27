@@ -1,0 +1,6 @@
+t2j
+===
+
+.. currentmodule:: adda.convert.jax
+
+.. autofunction:: t2j

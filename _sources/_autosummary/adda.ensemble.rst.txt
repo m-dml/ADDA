@@ -1,0 +1,35 @@
+ensemble
+========
+
+
+.. automodule:: adda.ensemble
+
+    
+    
+    .. rubric:: Modules
+
+    .. autosummary::
+       :toctree:
+       :template: custom-module.rst
+       :recursive:
+    
+       enkf
+       enks
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   

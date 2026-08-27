@@ -1,0 +1,28 @@
+MaskedIidGaussianObsOp
+======================
+
+.. currentmodule:: adda.observation.operators
+
+.. autoclass:: MaskedIidGaussianObsOp
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MaskedIidGaussianObsOp.__init__
+      ~MaskedIidGaussianObsOp.conditional_mean
+      ~MaskedIidGaussianObsOp.linearize
+      ~MaskedIidGaussianObsOp.log_prob
+      ~MaskedIidGaussianObsOp.restrict_time_domain
+      ~MaskedIidGaussianObsOp.sample
+      ~MaskedIidGaussianObsOp.to
+   
+   
+
+   
+   
+   

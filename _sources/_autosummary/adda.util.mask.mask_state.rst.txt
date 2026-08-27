@@ -1,0 +1,6 @@
+mask\_state
+===========
+
+.. currentmodule:: adda.util.mask
+
+.. autofunction:: mask_state

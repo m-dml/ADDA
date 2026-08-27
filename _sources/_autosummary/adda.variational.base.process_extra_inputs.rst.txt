@@ -1,0 +1,6 @@
+process\_extra\_inputs
+======================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: process_extra_inputs
