@@ -1,0 +1,33 @@
+optimization
+============
+
+
+.. automodule:: adda.util.optimization
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      optimize
+   
+   
+
+   
+   
+   
+
+   
+   
+   

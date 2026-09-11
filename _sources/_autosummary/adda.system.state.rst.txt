@@ -1,0 +1,41 @@
+state
+=====
+
+
+.. automodule:: adda.system.state
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      check_time_axis
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      State
+   
+   
+
+   
+   
+   

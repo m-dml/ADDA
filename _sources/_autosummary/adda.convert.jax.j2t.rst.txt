@@ -1,0 +1,6 @@
+j2t
+===
+
+.. currentmodule:: adda.convert.jax
+
+.. autofunction:: j2t

@@ -1,0 +1,6 @@
+kalman\_filter
+==============
+
+.. currentmodule:: adda.kalman.filter
+
+.. autofunction:: kalman_filter

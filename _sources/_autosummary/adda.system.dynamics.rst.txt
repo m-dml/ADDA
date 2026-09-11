@@ -1,0 +1,33 @@
+dynamics
+========
+
+
+.. automodule:: adda.system.dynamics
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      LinearDynamics
+   
+   
+
+   
+   
+   

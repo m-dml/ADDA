@@ -1,0 +1,6 @@
+isnumber
+========
+
+.. currentmodule:: adda.util.data
+
+.. autofunction:: isnumber

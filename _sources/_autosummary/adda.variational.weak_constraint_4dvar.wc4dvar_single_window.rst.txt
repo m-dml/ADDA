@@ -1,0 +1,6 @@
+wc4dvar\_single\_window
+=======================
+
+.. currentmodule:: adda.variational.weak_constraint_4dvar
+
+.. autofunction:: wc4dvar_single_window

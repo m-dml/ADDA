@@ -1,0 +1,6 @@
+kalman\_smoother
+================
+
+.. currentmodule:: adda.kalman.smoother
+
+.. autofunction:: kalman_smoother

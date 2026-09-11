@@ -1,0 +1,6 @@
+process\_wc4dvar\_init
+======================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: process_wc4dvar_init

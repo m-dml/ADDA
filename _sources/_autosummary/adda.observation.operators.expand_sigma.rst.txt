@@ -1,0 +1,6 @@
+expand\_sigma
+=============
+
+.. currentmodule:: adda.observation.operators
+
+.. autofunction:: expand_sigma

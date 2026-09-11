@@ -1,0 +1,42 @@
+weak\_constraint\_4dvar
+=======================
+
+
+.. automodule:: adda.variational.weak_constraint_4dvar
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      wc4dvar_single_window
+      wc4dvar_sliding_window
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      WC4DVarLoss
+   
+   
+
+   
+   
+   

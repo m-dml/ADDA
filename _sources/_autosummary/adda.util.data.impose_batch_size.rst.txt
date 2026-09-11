@@ -1,0 +1,6 @@
+impose\_batch\_size
+===================
+
+.. currentmodule:: adda.util.data
+
+.. autofunction:: impose_batch_size

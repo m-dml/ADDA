@@ -1,0 +1,6 @@
+naive\_initialization
+=====================
+
+.. currentmodule:: adda.util.initialization
+
+.. autofunction:: naive_initialization

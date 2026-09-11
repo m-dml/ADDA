@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.variational.base &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.variational.base</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">adda.observation.data</span> <span class="kn">import</span> <span class="n">ObservationSet</span>
+<span class="kn">from</span> <span class="nn">adda.observation.operators</span> <span class="kn">import</span> <span class="n">ObservationOperator</span>
+<span class="kn">from</span> <span class="nn">adda.probability.distributions</span> <span class="kn">import</span> <span class="n">DiagonalGaussian</span><span class="p">,</span> <span class="n">Distribution</span><span class="p">,</span> <span class="n">impose_batch_sizes</span>
+<span class="kn">from</span> <span class="nn">adda.util.initialization</span> <span class="kn">import</span> <span class="n">naive_initialization</span>
+<span class="kn">from</span> <span class="nn">adda.util.state_space</span> <span class="kn">import</span> <span class="n">rollout</span><span class="p">,</span> <span class="n">same_shape</span>
+<span class="kn">from</span> <span class="nn">adda.util.typing</span> <span class="kn">import</span> <span class="n">ListOfStates</span><span class="p">,</span> <span class="n">State</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">full_like</span><span class="p">,</span> <span class="n">searchsorted</span><span class="p">,</span> <span class="n">Tensor</span>
+<span class="kn">from</span> <span class="nn">torch.optim.optimizer</span> <span class="kn">import</span> <span class="n">Optimizer</span>
+
+
+<div class="viewcode-block" id="sliding_windows">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.sliding_windows.html#adda.variational.base.sliding_windows">[docs]</a>
+<span class="k">def</span> <span class="nf">sliding_windows</span><span class="p">(</span>
+    <span class="n">state_time_axis</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">window_duration</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">window_shift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">discard_partial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get time windows for sliding window data assimilation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        state_time_axis (Tensor): 1D tensor containing times for the state</span>
+<span class="sd">        window_duration (Union[float, int]): length of assimilation window in time units (float) or time steps (int)</span>
+<span class="sd">        window_shift (Union[float, int], optional): shift between consecutive windows,</span>
+<span class="sd">            as a fraction of window size (float) or as a number of time steps (int). Defaults to 0.25.</span>
+<span class="sd">        discard_partial (bool, optional): Discard windows extending beyond final observation, defaults False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Invalid type for state_time_axis: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Invalid shape for state_time_axis: </span><span class="si">{</span><span class="n">state_time_axis</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">window_duration</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;Invalid type for window_duration: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">window_duration</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">window_shift</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;Invalid type for window_shift: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">window_shift</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">t0</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">trange</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t0</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+    <span class="n">mean_dt</span> <span class="o">=</span> <span class="n">dt</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+    <span class="n">fixed_dt</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">mean_dt</span><span class="p">,</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">is</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;using float32 for state time axis can lead to precision issues when checking for fixed dt in long &quot;</span>
+            <span class="s2">&quot;sequences. HINT: try generating and providing time tensor using double precision if shape mismatch &quot;</span>
+            <span class="s2">&quot;assertion presents.&quot;</span>
+        <span class="p">)</span>
+    <span class="c1"># try to do everything with integers if the shift and duration are multiples of a fixed dt</span>
+    <span class="k">if</span> <span class="n">fixed_dt</span><span class="p">:</span>
+        <span class="n">r</span> <span class="o">=</span> <span class="p">(</span><span class="n">window_duration</span> <span class="o">/</span> <span class="n">mean_dt</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">else</span> <span class="n">window_duration</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">r</span> <span class="o">*</span> <span class="n">window_shift</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_shift</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">else</span> <span class="n">window_shift</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="nb">round</span><span class="p">(</span><span class="n">r</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span> <span class="ow">and</span> <span class="nb">abs</span><span class="p">(</span><span class="n">s</span> <span class="o">-</span> <span class="nb">round</span><span class="p">(</span><span class="n">s</span><span class="p">))</span> <span class="o">&lt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+            <span class="n">r</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="n">r</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">s</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;window duration and shift must remain positive after rounding&quot;</span>
+            <span class="k">if</span> <span class="n">discard_partial</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">-</span> <span class="n">r</span><span class="p">)</span> <span class="o">//</span> <span class="n">s</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">s</span><span class="p">)</span>
+            <span class="n">idx_ranges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">n</span> <span class="o">*</span> <span class="n">s</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">s</span> <span class="o">+</span> <span class="n">r</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_windows</span><span class="p">)]</span>
+            <span class="n">windows</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean_dt</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">mean_dt</span> <span class="o">/</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="ow">in</span> <span class="n">idx_ranges</span>
+            <span class="p">]</span>
+            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">windows</span><span class="p">),</span> <span class="n">idx_ranges</span>
+
+    <span class="c1"># time shift between consecutive windows</span>
+    <span class="k">assert</span> <span class="n">window_shift</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">window_duration</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;shift and window duration must be strictly positive&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_shift</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">window_shift</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;shifts of more than one full window are not supported&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">shift</span> <span class="o">=</span> <span class="n">window_duration</span> <span class="o">*</span> <span class="n">window_shift</span> <span class="k">if</span> <span class="n">window_shift</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="n">window_duration</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">shift</span> <span class="o">%</span> <span class="mi">1</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">):</span>
+                <span class="n">shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">shift</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">discard_partial</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">trange</span> <span class="o">-</span> <span class="n">window_duration</span><span class="p">)</span> <span class="o">//</span> <span class="n">shift</span><span class="p">)</span>  <span class="c1"># round down</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">trange</span> <span class="o">/</span> <span class="n">shift</span><span class="p">)</span>  <span class="c1"># this doesn&#39;t do a window starting on the final obs. correct?</span>
+
+            <span class="n">windows</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">t0</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">shift</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="n">t0</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">shift</span> <span class="o">+</span> <span class="n">window_duration</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_windows</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">shift</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">window_duration</span> <span class="o">*</span> <span class="n">window_shift</span><span class="p">)</span> <span class="k">if</span> <span class="n">window_shift</span> <span class="o">&lt;</span> <span class="mf">1.0</span> <span class="k">else</span> <span class="n">window_duration</span>  <span class="c1"># integer shift</span>
+            <span class="k">assert</span> <span class="n">shift</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;With windows of </span><span class="si">{</span><span class="n">window_duration</span><span class="si">}</span><span class="s2"> steps and shift fraction of </span><span class="si">{</span><span class="n">window_shift</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="s2">&quot;the shift is strictly less than one time step.&quot;</span>
+            <span class="k">if</span> <span class="n">discard_partial</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">//</span> <span class="n">shift</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">n_windows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">shift</span><span class="p">)</span>
+
+            <span class="n">windows</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span>
+                    <span class="n">state_time_axis</span><span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span><span class="p">],</span>
+                    <span class="n">state_time_axis</span><span class="p">[</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span> <span class="o">+</span> <span class="n">window_duration</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)],</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_windows</span><span class="p">)</span>
+            <span class="p">]</span>
+
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_shift</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>  <span class="c1"># window_shift and window_duration are both int</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="n">window_shift</span>  <span class="c1"># integer shift</span>
+        <span class="k">if</span> <span class="n">discard_partial</span><span class="p">:</span>
+            <span class="n">n_windows</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">//</span> <span class="n">shift</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_windows</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span> <span class="o">/</span> <span class="n">shift</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">window_shift</span> <span class="o">&lt;=</span> <span class="n">window_duration</span><span class="p">,</span> <span class="s2">&quot;shifts of more than one full window are not supported&quot;</span>
+            <span class="n">windows</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span><span class="p">],</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span> <span class="o">+</span> <span class="n">window_duration</span><span class="p">])</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_windows</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">windows</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span><span class="p">],</span> <span class="nb">min</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">n</span> <span class="o">*</span> <span class="n">shift</span><span class="p">]</span> <span class="o">+</span> <span class="n">window_duration</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_windows</span><span class="p">)</span>
+            <span class="p">]</span>
+    <span class="k">assert</span> <span class="n">shift</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;shift must be strictly positive&quot;</span>
+
+    <span class="n">idx_ranges</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># index ranges into observation_times for each window</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">t_start</span><span class="p">,</span> <span class="n">t_end</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:],</span> <span class="n">t_start</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">s</span> <span class="o">+</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:],</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="p">)</span>  <span class="c1"># index of first observation after the current window</span>
+        <span class="n">idx_ranges</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">windows</span><span class="p">),</span> <span class="n">idx_ranges</span></div>
+
+
+
+<div class="viewcode-block" id="process_extra_inputs">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.process_extra_inputs.html#adda.variational.base.process_extra_inputs">[docs]</a>
+<span class="k">def</span> <span class="nf">process_extra_inputs</span><span class="p">(</span><span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check and process dynamic/static inputs for 4D-Var.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        dynamic_inputs (State): dynamic inputs to check</span>
+<span class="sd">        static_inputs (State): static inputs to check</span>
+<span class="sd">        time_axis (Tensor): timeaxis</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        dynamic_inputs, static_inputs: checked inputs as State objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">time_axis</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dynamic_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dynamic_inputs</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">)),</span> <span class="n">time_axis</span><span class="o">=</span><span class="n">time_axis</span><span class="p">)</span>  <span class="c1"># State with no fields</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">State</span><span class="p">),</span> <span class="s2">&quot;extra_inputs must be of type State&quot;</span>
+        <span class="k">assert</span> <span class="n">dynamic_inputs</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">==</span> <span class="p">(</span>
+            <span class="mi">1</span><span class="p">,</span>
+            <span class="n">T</span><span class="p">,</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;shape mismatch between </span><span class="si">{</span><span class="n">dynamic_inputs</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="n">T</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">static_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">static_inputs</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>  <span class="c1"># State with no fields</span>
+    <span class="k">return</span> <span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span></div>
+
+
+
+<div class="viewcode-block" id="process_4dvar_inputs">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.process_4dvar_inputs.html#adda.variational.base.process_4dvar_inputs">[docs]</a>
+<span class="k">def</span> <span class="nf">process_4dvar_inputs</span><span class="p">(</span>
+    <span class="n">obs_op</span><span class="p">:</span> <span class="n">ObservationOperator</span><span class="p">,</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">x_init</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">background_prior</span><span class="p">:</span> <span class="n">Distribution</span><span class="p">,</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="n">ObservationSet</span><span class="p">,</span>
+    <span class="n">state_time_axis</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">model_error_distribs</span><span class="p">:</span> <span class="n">Distribution</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">window_duration</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">window_shift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">discard_partial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">rollout_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">c_proj</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">State</span><span class="p">,</span> <span class="n">Distribution</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check/update inputs for 4D-Var routines.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obs_op (ObservationOperator): mapping from system state sequence to observations</span>
+<span class="sd">        m_dyn (Callable): time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs</span>
+<span class="sd">        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)</span>
+<span class="sd">        static_inputs (State): extra inputs that don&#39;t vary over time (e.g. bathymetry)</span>
+<span class="sd">        x_init (State): first guess for initial state (strong-constraint) or all states (weak-constraint).</span>
+<span class="sd">          Uses prior mean if None. should have a leading batch dimension, followed by time dimension for weak</span>
+<span class="sd">            constraint.</span>
+<span class="sd">        background_prior (Distribution): prior distribution in initial state</span>
+<span class="sd">        observations (ObservationSet): observations data to be assimilated</span>
+<span class="sd">        model_error_distribs (Distribution): distributions of model errors at</span>
+<span class="sd">          each time step. Must have length 1 on batch axis.</span>
+<span class="sd">        state_time_axis (Tensor, optional): The time axis on which the assimilated state should be defined.</span>
+<span class="sd">            If unspecified, uses the time axis of x_init if possible, otherwise the time axis of obs_op.</span>
+<span class="sd">        window_duration (Union[float, int]): length of assimilation window in time units (float) or time steps (int)</span>
+<span class="sd">        window_shift (Union[float, int], optional): shift between consecutive windows,</span>
+<span class="sd">            as a fraction of the window size (float) or as a number of time steps (int). Defaults to 0.25.</span>
+<span class="sd">        discard_partial (bool, optional): Discard windows extending beyond final observation, defaults False.</span>
+<span class="sd">        rollout_init (bool): indicates whether to copy or rollout the input state if it is only one time step,</span>
+<span class="sd">            for weak-constraint 4D-Var</span>
+<span class="sd">        c_proj (Callable, optional): optional projection from control-space fields to model-space fields.</span>
+<span class="sd">            It must take and return a TensorDict with batch size (1, 1).</span>
+<span class="sd">            For strong-constraint 4D-Var, the background prior remains in control space.</span>
+<span class="sd">            Currently, this is only supported for single window strong-constraint 4D-Var.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_weak</span> <span class="o">=</span> <span class="n">model_error_distribs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">state_time_axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">x_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_weak</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+                <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">,</span> <span class="n">state_time_axis</span>
+            <span class="p">),</span> <span class="s2">&quot;x_init and state_time_axis are both defined and contradict each other&quot;</span>
+    <span class="k">elif</span> <span class="n">x_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">is_weak</span><span class="p">:</span>
+        <span class="n">state_time_axis</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obs_op</span><span class="p">,</span> <span class="s2">&quot;time_axis&quot;</span><span class="p">),</span> <span class="s2">&quot;if the observation operator has no time axis, &quot;</span>
+        <span class="s2">&quot;then the state time axis should be specified using arguments state_time_axis or x_init&quot;</span>
+        <span class="n">state_time_axis</span> <span class="o">=</span> <span class="n">obs_op</span><span class="o">.</span><span class="n">time_axis</span>
+    <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+        <span class="n">state_time_axis_dt</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+            <span class="n">state_time_axis_dt</span><span class="p">,</span> <span class="n">state_time_axis_dt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span>
+        <span class="p">),</span> <span class="s2">&quot;For weak-constraint 4D-Var, the state time axis must be regular.&quot;</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="n">ObservationSet</span><span class="p">),</span> <span class="s2">&quot;Observations must be of type ObservationSet&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="s2">&quot;time_axis&quot;</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span><span class="n">obs_op</span><span class="o">.</span><span class="n">time_axis</span> <span class="o">==</span> <span class="n">observations</span><span class="o">.</span><span class="n">time_axis</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="s2">&quot;time axis mismatch&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">observations</span><span class="p">,</span> <span class="s2">&quot;valid_interval&quot;</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">valid_time_interval</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">obs_op</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="ow">and</span> <span class="n">observations</span><span class="o">.</span><span class="n">valid_time_interval</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">obs_op</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">),</span> <span class="s2">&quot;observations outside operator time range&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window_duration</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">window_duration</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot; window_duration should have a single value or be a float or int&quot;</span>
+        <span class="n">window_duration</span> <span class="o">=</span> <span class="n">window_duration</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">window_duration</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">windows</span><span class="p">,</span> <span class="n">idx_ranges</span> <span class="o">=</span> <span class="n">sliding_windows</span><span class="p">(</span>
+            <span class="n">state_time_axis</span><span class="p">,</span> <span class="n">window_duration</span><span class="p">,</span> <span class="n">window_shift</span><span class="o">=</span><span class="n">window_shift</span><span class="p">,</span> <span class="n">discard_partial</span><span class="o">=</span><span class="n">discard_partial</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">c_proj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;projection of the initial state to the model space is&quot;</span>
+                <span class="s2">&quot; currently not supported for sliding-window 4D-Var&quot;</span>
+            <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">windows</span><span class="p">,</span> <span class="n">idx_ranges</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">background_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">background_prior</span> <span class="o">=</span> <span class="n">impose_batch_sizes</span><span class="p">(</span><span class="n">background_prior</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">x_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;batching is not supported for classical 4D-Var&quot;</span>
+        <span class="k">if</span> <span class="n">background_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">same_shape</span><span class="p">(</span><span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="p">[:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">1</span><span class="p">],</span> <span class="n">background_prior</span><span class="o">.</span><span class="n">mean</span><span class="p">),</span> <span class="s2">&quot;size mismsatch&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_weak</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;the initialization of strong-constraint 4D-Var &quot;</span>
+            <span class="s2">&quot;should have a time dimension of 1&quot;</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">is_weak</span><span class="p">:</span>
+        <span class="n">x_init</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">background_prior</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">time_axis</span><span class="o">=</span><span class="n">state_time_axis</span><span class="p">[:</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+        <span class="n">model_error_distribs</span> <span class="o">=</span> <span class="n">impose_batch_sizes</span><span class="p">(</span><span class="n">model_error_distribs</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">c_proj</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;projection of the initial state to the model space is&quot;</span>
+                <span class="s2">&quot; currently not supported for weak-constraint 4D-Var&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">x_init</span> <span class="o">=</span> <span class="n">process_wc4dvar_init</span><span class="p">(</span>
+            <span class="n">x_init</span><span class="p">,</span> <span class="n">m_dyn</span><span class="p">,</span> <span class="n">background_prior</span><span class="p">,</span> <span class="n">observations</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="o">=</span><span class="n">state_time_axis</span><span class="p">,</span> <span class="n">rollout_init</span><span class="o">=</span><span class="n">rollout_init</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_error_distribs</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">):</span>
+            <span class="k">assert</span> <span class="n">same_shape</span><span class="p">(</span>
+                <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:],</span> <span class="n">model_error_distribs</span><span class="o">.</span><span class="n">mu</span>
+            <span class="p">),</span> <span class="s2">&quot;dimension mismatch between state sequence and model error prior&quot;</span>
+    <span class="n">x_init</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># might need to change this if we&#39;re differentiating through the 4D-Var operations</span>
+    <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span> <span class="o">=</span> <span class="n">process_extra_inputs</span><span class="p">(</span><span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">,</span> <span class="n">x_init</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">idx_ranges</span><span class="p">,</span> <span class="n">model_error_distribs</span></div>
+
+
+
+<div class="viewcode-block" id="process_wc4dvar_init">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.process_wc4dvar_init.html#adda.variational.base.process_wc4dvar_init">[docs]</a>
+<span class="k">def</span> <span class="nf">process_wc4dvar_init</span><span class="p">(</span>
+    <span class="n">x_init</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">background_prior</span><span class="p">:</span> <span class="n">Distribution</span><span class="p">,</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="n">ObservationSet</span><span class="p">,</span>
+    <span class="n">state_time_axis</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rollout_init</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the time series corresponding to the initial state of the weak-constraint 4D-Var optimization.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x_init (State): a State passed as input to wc4dvar, containing either one time step or the whole time range</span>
+<span class="sd">        m_dyn (Callable): time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs</span>
+<span class="sd">        background_prior (Distribution): prior distribution of the initial state</span>
+<span class="sd">        observations (ObservationSet): list of observations at each time point</span>
+<span class="sd">        state_time_axis (Tensor, optional): The time axis on which the assimilated state should be defined.</span>
+<span class="sd">        rollout_init (bool): if x_init is just the state at one time steps, decides whether to copy it or roll it out</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        x_init (State): the processed initial state with the right format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">x_init</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">background_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">x_init</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">background_prior</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">State</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">state_time_axis</span><span class="o">.</span><span class="n">nelement</span><span class="p">():</span>
+            <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span> <span class="o">=</span> <span class="n">state_time_axis</span>
+        <span class="k">elif</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rollout_init</span><span class="p">:</span>
+                <span class="n">x_init</span> <span class="o">=</span> <span class="n">rollout</span><span class="p">(</span><span class="n">m_dyn</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">,</span> <span class="n">x_init</span><span class="p">,</span> <span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_init</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">expand_time</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">x_init</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;at this point of the processing x_init has to be a State or None&quot;</span>
+        <span class="n">x_init</span> <span class="o">=</span> <span class="n">naive_initialization</span><span class="p">(</span><span class="n">observations</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x_init</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(),</span> <span class="p">(</span>
+            <span class="s2">&quot;naive initialization failed: some fields/locations have no data. To &quot;</span>
+            <span class="s2">&quot;solve this problem, provide an x_init or background_prior&quot;</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">x_init</span></div>
+
+
+
+<div class="viewcode-block" id="sliding_window_4dvar">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.sliding_window_4dvar.html#adda.variational.base.sliding_window_4dvar">[docs]</a>
+<span class="k">def</span> <span class="nf">sliding_window_4dvar</span><span class="p">(</span>
+    <span class="n">da_function</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span>
+    <span class="n">observations</span><span class="p">:</span> <span class="n">ObservationSet</span><span class="p">,</span>  <span class="c1"># array or less</span>
+    <span class="n">obs_op</span><span class="p">:</span> <span class="n">ObservationOperator</span><span class="p">,</span>
+    <span class="n">window_duration</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span>
+    <span class="n">window_shift</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.25</span><span class="p">,</span>
+    <span class="n">model_error_distribs</span><span class="p">:</span> <span class="n">Distribution</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">discard_partial</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">x_init</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">background_prior</span><span class="p">:</span> <span class="n">Distribution</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">covariance_factors</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">state_time_axis</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">optimizer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Optimizer</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">LBFGS</span><span class="p">,</span>
+    <span class="n">optimizer_pars</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">n_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">c_proj</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ListOfStates</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Weak- or strong- constraint 4D-Var for overlapping windows of observations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        da_function (Callable): data assimiliation function to be used on each window</span>
+<span class="sd">        m_dyn (Callable): time stepping operator, taking inputs x, t, dt, extra_inputs</span>
+<span class="sd">        observations (ObservationSet): set of observations to be assimilated.</span>
+<span class="sd">        obs_op (ObservationOperator): observation operator used to map between system states and observations</span>
+<span class="sd">        window_duration (Union[float, int]): window length in time units</span>
+<span class="sd">        window_shift (Union[float, int], optional): shift between consecutive windows,</span>
+<span class="sd">            as a fraction of window size (float) or as a number of time steps (int). Defaults to 0.25.</span>
+<span class="sd">        model_error_distribs (Distribution): distributions of model errors at each time step (only for weak-constraint)</span>
+<span class="sd">        state_time_axis (Tensor, optional): The time axis on which the assimilated state should be defined.</span>
+<span class="sd">            If unspecified, uses the time axis of x_init if possible, otherwise the time axis of obs_op.</span>
+<span class="sd">        discard_partial (bool, optional): Drop windows extending beyond last obs, default False.</span>
+<span class="sd">        x_init (State): first guess of initial state (strong-constraint) or state trajectory (weak-constraint).</span>
+<span class="sd">          Uses prior mean if None. Should have leading batch, then time dimension (of length 1 for strong-constraint).</span>
+<span class="sd">        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)</span>
+<span class="sd">        static_inputs (State): extra inputs that don&#39;t vary over time (e.g. bathymetry)</span>
+<span class="sd">        background_prior (Distribution, optional): background prior for first window. Defaults to None.</span>
+<span class="sd">        covariance_factors (Union[float, int, list]): factors of the covariance matrix</span>
+<span class="sd">          for all prior terms after the first window</span>
+<span class="sd">        optimizer_class: class of a pytorch optimizer, default is LBFGS</span>
+<span class="sd">        optimizer_pars (dict): parameters for optimizer (learning rate etc.)</span>
+<span class="sd">        n_steps (int): the number of optimization steps</span>
+<span class="sd">        verbose (bool): if True, print loss at each iteration. default is False</span>
+<span class="sd">        c_proj (Callable, optional): kept for API compatibility and forwarded to input checks.</span>
+<span class="sd">            Sliding-window mode currently does not support c_proj and raises an assertion if provided.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        ListOfStates: initial state for each assimilation window</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">is_weak</span> <span class="o">=</span> <span class="n">model_error_distribs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">(</span>
+        <span class="n">dynamic_inputs</span><span class="p">,</span>
+        <span class="n">static_inputs</span><span class="p">,</span>
+        <span class="n">x_init</span><span class="p">,</span>
+        <span class="n">state_time_axis</span><span class="p">,</span>
+        <span class="n">windows</span><span class="p">,</span>
+        <span class="n">idx_ranges</span><span class="p">,</span>
+        <span class="n">model_error_distribs</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">=</span> <span class="n">process_4dvar_inputs</span><span class="p">(</span>
+        <span class="n">obs_op</span><span class="p">,</span>
+        <span class="n">m_dyn</span><span class="p">,</span>
+        <span class="n">dynamic_inputs</span><span class="p">,</span>
+        <span class="n">static_inputs</span><span class="p">,</span>
+        <span class="n">x_init</span><span class="p">,</span>
+        <span class="n">background_prior</span><span class="p">,</span>
+        <span class="n">observations</span><span class="p">,</span>
+        <span class="n">model_error_distribs</span><span class="o">=</span><span class="n">model_error_distribs</span><span class="p">,</span>
+        <span class="n">state_time_axis</span><span class="o">=</span><span class="n">state_time_axis</span><span class="p">,</span>
+        <span class="n">window_duration</span><span class="o">=</span><span class="n">window_duration</span><span class="p">,</span>
+        <span class="n">window_shift</span><span class="o">=</span><span class="n">window_shift</span><span class="p">,</span>
+        <span class="n">discard_partial</span><span class="o">=</span><span class="n">discard_partial</span><span class="p">,</span>
+        <span class="n">c_proj</span><span class="o">=</span><span class="n">c_proj</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">state_time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">)</span>  <span class="c1"># mean time step</span>
+    <span class="k">if</span> <span class="n">background_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">background_prior</span><span class="p">,</span> <span class="n">DiagonalGaussian</span><span class="p">),</span> <span class="s2">&quot;background prior must be diagonal Gaussian.&quot;</span>
+        <span class="n">first_background_prior</span> <span class="o">=</span> <span class="n">DiagonalGaussian</span><span class="p">(</span><span class="n">background_prior</span><span class="o">.</span><span class="n">mu</span><span class="p">,</span> <span class="n">background_prior</span><span class="o">.</span><span class="n">sigma</span><span class="p">)</span>  <span class="c1"># copy for later</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">covariance_factors</span><span class="p">)</span> <span class="ow">in</span> <span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+        <span class="n">covariance_factors</span> <span class="o">=</span> <span class="p">[</span><span class="n">covariance_factors</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_ranges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">covariance_factors</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span> <span class="s2">&quot;covariance_factors must be int, float or list&quot;</span>
+
+    <span class="n">x_eachwin</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># IC (hc) or state trajectory (wc) for each window</span>
+    <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span>
+            <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">,</span> <span class="n">state_time_axis</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">)]</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;x_init.time_axis </span><span class="si">{</span><span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="si">}</span><span class="s2"> is different from state_time_axis </span><span class="si">{</span><span class="n">state_time_axis</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">first_ind</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">((</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">),</span> <span class="p">(</span><span class="n">t_s</span><span class="p">,</span> <span class="n">t_e</span><span class="p">))</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">idx_ranges</span><span class="p">,</span> <span class="n">windows</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Time steps </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">is_weak</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">x_init</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">restrict_time_domain</span><span class="p">(</span><span class="n">t_s</span><span class="p">,</span> <span class="n">t_e</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">()</span>
+        <span class="c1"># positional arguments for this window</span>
+        <span class="n">obs_bounds</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_weak</span> <span class="k">else</span> <span class="p">(</span><span class="n">t_s</span><span class="p">,</span> <span class="n">t_e</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+        <span class="n">da_args</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">m_dyn</span><span class="p">,</span>
+            <span class="n">observations</span><span class="o">.</span><span class="n">restrict_time_domain</span><span class="p">(</span><span class="n">obs_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">obs_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+            <span class="n">obs_op</span><span class="o">.</span><span class="n">restrict_time_domain</span><span class="p">(</span><span class="n">obs_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">obs_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">),</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+            <span class="n">first_ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">,</span> <span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">da_args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_error_distribs</span><span class="p">[:,</span> <span class="n">first_ind</span> <span class="p">:</span> <span class="n">first_ind</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_init</span><span class="o">.</span><span class="n">time_axis</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">state_time_axis_arg</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span>
+        <span class="c1"># keyword arguments for this window</span>
+        <span class="n">da_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">x_init</span><span class="o">=</span><span class="n">x_init</span><span class="p">,</span>
+            <span class="n">state_time_axis</span><span class="o">=</span><span class="n">state_time_axis_arg</span><span class="p">,</span>
+            <span class="n">dynamic_inputs</span><span class="o">=</span><span class="n">dynamic_inputs</span><span class="p">[:,</span> <span class="n">s</span> <span class="p">:</span> <span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">static_inputs</span><span class="o">=</span><span class="n">static_inputs</span><span class="p">,</span>
+            <span class="n">background_prior</span><span class="o">=</span><span class="n">background_prior</span><span class="p">,</span>
+            <span class="n">optimizer_class</span><span class="o">=</span><span class="n">optimizer_class</span><span class="p">,</span>
+            <span class="n">optimizer_pars</span><span class="o">=</span><span class="n">optimizer_pars</span><span class="p">,</span>
+            <span class="n">n_steps</span><span class="o">=</span><span class="n">n_steps</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span>
+            <span class="n">check_inputs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># already checked once, don&#39;t need to check again for each window</span>
+        <span class="p">)</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">da_function</span><span class="p">(</span><span class="o">*</span><span class="n">da_args</span><span class="p">,</span> <span class="o">**</span><span class="n">da_kwargs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">x_eachwin</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_ranges</span><span class="p">):</span>  <span class="c1"># prepare for next window</span>
+            <span class="n">next_s</span><span class="p">,</span> <span class="n">next_e</span> <span class="o">=</span> <span class="n">idx_ranges</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">next_t_s</span><span class="p">,</span> <span class="n">next_t_e</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+                    <span class="c1"># to initialize the next window&#39;s trajectory, we use some of this window&#39;s trajectory and extend</span>
+                    <span class="c1"># with a rollout as needed</span>
+                    <span class="n">x_init_fromprev</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">next_s</span> <span class="o">-</span> <span class="n">s</span> <span class="p">:]</span>
+                    <span class="k">if</span> <span class="p">(</span>
+                        <span class="n">e</span> <span class="o">==</span> <span class="n">next_e</span>
+                    <span class="p">):</span>  <span class="c1"># this window has reached the end of the observations, no need for a forecast rollout</span>
+                        <span class="n">x_init</span> <span class="o">=</span> <span class="n">x_init_fromprev</span>
+                    <span class="k">else</span><span class="p">:</span>  <span class="c1"># generate a forecast to initialize unknown system states for next window</span>
+                        <span class="n">first_ind</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">state_time_axis</span><span class="p">,</span> <span class="n">x_init_fromprev</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="n">t_rollout</span> <span class="o">=</span> <span class="n">state_time_axis</span><span class="p">[</span><span class="n">first_ind</span><span class="p">:</span><span class="n">next_e</span><span class="p">]</span>
+                        <span class="n">dynamic_inputs_win</span> <span class="o">=</span> <span class="n">dynamic_inputs</span><span class="p">[:,</span> <span class="n">e</span><span class="p">:</span><span class="n">next_e</span><span class="p">]</span>
+                        <span class="n">x_init_fromroll</span> <span class="o">=</span> <span class="n">rollout</span><span class="p">(</span>
+                            <span class="n">m_dyn</span><span class="p">,</span>
+                            <span class="n">t_rollout</span><span class="p">,</span>
+                            <span class="n">x</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:],</span>
+                            <span class="n">dynamic_inputs</span><span class="o">=</span><span class="n">dynamic_inputs_win</span><span class="p">,</span>  <span class="c1"># include dynamic_inputs for IC</span>
+                            <span class="n">static_inputs</span><span class="o">=</span><span class="n">static_inputs</span><span class="p">,</span>
+                        <span class="p">)[</span>
+                            <span class="p">:,</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="p">]</span>  <span class="c1"># discard IC</span>
+
+                        <span class="n">x_init</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span>
+                            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x_init_fromprev</span><span class="o">.</span><span class="n">fields</span><span class="p">,</span> <span class="n">x_init_fromroll</span><span class="o">.</span><span class="n">fields</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                            <span class="n">time_axis</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x_init_fromprev</span><span class="o">.</span><span class="n">time_axis</span><span class="p">,</span> <span class="n">x_init_fromroll</span><span class="o">.</span><span class="n">time_axis</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                        <span class="p">)</span>
+
+                <span class="k">else</span><span class="p">:</span>  <span class="c1"># for strong-constraint, we roll from start of this window to start of the next</span>
+                    <span class="n">t_rollout</span> <span class="o">=</span> <span class="n">obs_op</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="n">s</span> <span class="p">:</span> <span class="n">next_s</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="n">x_init</span> <span class="o">=</span> <span class="n">rollout</span><span class="p">(</span><span class="n">m_dyn</span><span class="p">,</span> <span class="n">t_rollout</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">dynamic_inputs</span><span class="p">[:,</span> <span class="n">s</span><span class="p">:</span><span class="n">next_s</span><span class="p">],</span> <span class="n">static_inputs</span><span class="p">)[</span>
+                        <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="p">]</span>  <span class="c1"># only final state</span>
+
+            <span class="n">x_init</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">background_prior</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># shift mean, scale covariance of background prior</span>
+                <span class="n">mu</span> <span class="o">=</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_weak</span> <span class="k">else</span> <span class="n">x_init</span><span class="o">.</span><span class="n">fields</span>
+                <span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">background_prior</span><span class="o">.</span><span class="n">mu</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># remove batch dimension</span>
+                <span class="n">background_prior</span> <span class="o">=</span> <span class="n">DiagonalGaussian</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">first_background_prior</span><span class="o">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">covariance_factors</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">x_eachwin</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">idx_ranges</span></div>
+
+
+
+<div class="viewcode-block" id="assemble_analysis">
+<a class="viewcode-back" href="../../../_autosummary/adda.variational.base.assemble_analysis.html#adda.variational.base.assemble_analysis">[docs]</a>
+<span class="k">def</span> <span class="nf">assemble_analysis</span><span class="p">(</span>
+    <span class="n">x_eachwin</span><span class="p">:</span> <span class="n">ListOfStates</span><span class="p">,</span>
+    <span class="n">idx_ranges</span><span class="p">,</span>
+    <span class="n">time_axis</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">is_weak</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">m_dyn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dynamic_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">static_inputs</span><span class="p">:</span> <span class="n">State</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">State</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Combines the results of a windowed DA method into a single analysis for all time steps.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x_eachwin (ListOfStates): assimilated state(s) for each analysis window</span>
+<span class="sd">        idx_ranges: range of observations for each window</span>
+<span class="sd">        time_axis (Tensor): global list of observation times for all windows</span>
+<span class="sd">        is_weak (bool): was this a weak_constraint method</span>
+<span class="sd">        m_dyn (Callable): time stepping operator, taking inputs x, t, dt, extra_inputs</span>
+<span class="sd">        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)</span>
+<span class="sd">        static_inputs (State): extra inputs that don&#39;t vary over time (e.g. bathymetry)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span> <span class="o">=</span> <span class="n">process_extra_inputs</span><span class="p">(</span><span class="n">dynamic_inputs</span><span class="p">,</span> <span class="n">static_inputs</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">)</span>
+    <span class="n">T</span> <span class="o">=</span> <span class="n">time_axis</span><span class="o">.</span><span class="n">nelement</span><span class="p">()</span>
+    <span class="n">analysis_fields</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">full_like</span><span class="p">(</span><span class="n">x_eachwin</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">fields</span><span class="p">[:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">torch</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">T</span><span class="p">)</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="p">)</span>  <span class="c1"># clone() to actually copy the data</span>
+    <span class="c1"># analysis is now a TensorDict with a singleton batch and time dimensions</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">idx_ranges</span><span class="p">):</span>
+        <span class="c1"># don&#39;t use the part of this analyis window that overlaps later windows</span>
+        <span class="n">e</span> <span class="o">=</span> <span class="n">idx_ranges</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_ranges</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">e</span>
+        <span class="n">n_thiswindow</span> <span class="o">=</span> <span class="n">e</span> <span class="o">-</span> <span class="n">s</span>
+
+        <span class="k">if</span> <span class="n">is_weak</span><span class="p">:</span>
+            <span class="n">abs_reldiff</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span> <span class="o">-</span> <span class="n">x_eachwin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[:</span><span class="n">n_thiswindow</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">e</span> <span class="o">-</span> <span class="n">s</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">time_axis</span><span class="p">[</span><span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">])</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">abs_reldiff</span> <span class="o">&lt;=</span> <span class="mf">1e-3</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="sa">f</span><span class="s2">&quot;time axis mismatch: </span><span class="si">{</span><span class="n">time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span><span class="si">}</span><span class="s2"> is different from </span><span class="si">{</span><span class="n">x_eachwin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[:</span><span class="n">n_thiswindow</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">analysis_fields</span><span class="p">[:,</span> <span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_eachwin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">fields</span><span class="p">[:,</span> <span class="p">:</span><span class="n">n_thiswindow</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x0</span> <span class="o">=</span> <span class="n">x_eachwin</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="n">x0</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">],</span> <span class="s2">&quot;time axis mismatch&quot;</span>
+            <span class="c1"># rollout to get state trajectory and remove batch dimension</span>
+            <span class="n">analysis_fields</span><span class="p">[:,</span> <span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">]</span> <span class="o">=</span> <span class="n">rollout</span><span class="p">(</span>
+                <span class="n">m_dyn</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">[</span><span class="n">s</span><span class="p">:</span><span class="n">e</span><span class="p">],</span> <span class="n">x0</span><span class="p">,</span> <span class="n">dynamic_inputs</span><span class="p">[:,</span> <span class="n">s</span> <span class="p">:</span> <span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="n">static_inputs</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">fields</span>
+
+    <span class="k">return</span> <span class="n">State</span><span class="p">(</span><span class="n">analysis_fields</span><span class="p">,</span> <span class="n">time_axis</span><span class="o">=</span><span class="n">time_axis</span><span class="p">)</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

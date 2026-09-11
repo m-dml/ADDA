@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.util.index &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.util.index</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="sorted_index_range">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.index.sorted_index_range.html#adda.util.index.sorted_index_range">[docs]</a>
+<span class="k">def</span> <span class="nf">sorted_index_range</span><span class="p">(</span><span class="n">sorted_1Darray</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="n">nonempty</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Find indices into sorted array that fall into a chosen interval.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sorted_1Darray (Tensor): sorted 1D Tensor</span>
+<span class="sd">        min_val (_type_): left boundary of interval</span>
+<span class="sd">        max_val (_type_): right boundary of interval</span>
+<span class="sd">        nonempty (bool, optional): Throws an error if not indices are found. Defaults to False.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        idx_start: maximum index such that sorted_1Darray[idx_start] &lt;= min_val, or else len(sorted_1darray)</span>
+<span class="sd">        idx_end: maximum index such that sorted_1Darray[idx_end] &lt;= max_val, or else len(sorted_1darray)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">assert</span> <span class="n">max_val</span> <span class="o">&gt;</span> <span class="n">min_val</span><span class="p">,</span> <span class="s2">&quot;range of values must be strictly increasing&quot;</span>
+    <span class="n">idx_start</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sorted_1Darray</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">idx_end</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sorted_1Darray</span><span class="p">,</span> <span class="n">max_val</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nonempty</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">idx_end</span> <span class="o">&gt;</span> <span class="n">idx_start</span><span class="p">,</span> <span class="s2">&quot;unexpected empty index range&quot;</span>
+
+    <span class="k">return</span> <span class="n">idx_start</span><span class="p">,</span> <span class="n">idx_end</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

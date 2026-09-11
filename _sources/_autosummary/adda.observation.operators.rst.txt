@@ -1,0 +1,47 @@
+operators
+=========
+
+
+.. automodule:: adda.observation.operators
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      expand_sigma
+      noisy_obs_from_mask
+      random_sparse_noisy_obs
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      IidGaussianObsOp
+      LinearGaussianObsOp
+      MaskedIidGaussianObsOp
+      MaskedIidGaussianTimeInterpolatedObsOp
+      ObservationOperator
+   
+   
+
+   
+   
+   

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>WC4DVarLoss &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="wc4dvar_sliding_window" href="adda.variational.weak_constraint_4dvar.wc4dvar_sliding_window.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="wc4dvarloss">
+<h1>WC4DVarLoss<a class="headerlink" href="#wc4dvarloss" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="adda.variational.weak_constraint_4dvar.WC4DVarLoss">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adda.variational.weak_constraint_4dvar.</span></span><span class="sig-name descname"><span class="pre">WC4DVarLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/variational/weak_constraint_4dvar.html#WC4DVarLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.variational.weak_constraint_4dvar.WC4DVarLoss" title="Link to this definition">¶</a></dt>
+<dd><p>Base object for representing the weak-constraint 4D-Var loss function.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(m_dyn, observations, obs_op, ...[, ...])</p></td>
+<td><p>Loss for weak constraint 4dvar.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.variational.weak_constraint_4dvar.WC4DVarLoss.forward" title="adda.variational.weak_constraint_4dvar.WC4DVarLoss.forward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forward</span></code></a>(fields)</p></td>
+<td><p>Compute loss function.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.variational.weak_constraint_4dvar.WC4DVarLoss.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tensordict.TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../_modules/adda/variational/weak_constraint_4dvar.html#WC4DVarLoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.variational.weak_constraint_4dvar.WC4DVarLoss.forward" title="Link to this definition">¶</a></dt>
+<dd><p>Compute loss function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fields</strong> (<em>TensorDict</em>) – variable fields for system state trajectory</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>loss value, summed over fields and all dimensions, and averaged over the batch</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="adda.html">adda</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adda.convert.html">convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.ensemble.html">ensemble</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.kalman.html">kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.observation.html">observation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.probability.html">probability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.system.html">system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.util.html">util</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="adda.variational.html">variational</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="adda.variational.base.html">base</a></li>
+<li class="toctree-l3"><a class="reference internal" href="adda.variational.strong_constraint_4dvar.html">strong_constraint_4dvar</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="adda.variational.weak_constraint_4dvar.html">weak_constraint_4dvar</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="adda.variational.weak_constraint_4dvar.wc4dvar_single_window.html">wc4dvar_single_window</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.variational.weak_constraint_4dvar.wc4dvar_sliding_window.html">wc4dvar_sliding_window</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">WC4DVarLoss</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#adda.variational.weak_constraint_4dvar.WC4DVarLoss"><code class="docutils literal notranslate"><span class="pre">WC4DVarLoss</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#adda.variational.weak_constraint_4dvar.WC4DVarLoss.forward"><code class="docutils literal notranslate"><span class="pre">forward()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="adda.html">adda</a><ul>
+  <li><a href="adda.variational.html">variational</a><ul>
+  <li><a href="adda.variational.weak_constraint_4dvar.html">weak_constraint_4dvar</a><ul>
+      <li>Previous: <a href="adda.variational.weak_constraint_4dvar.wc4dvar_sliding_window.html" title="previous chapter">wc4dvar_sliding_window</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/adda.variational.weak_constraint_4dvar.WC4DVarLoss.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

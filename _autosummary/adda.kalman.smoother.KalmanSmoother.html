@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>KalmanSmoother &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="RTSKalmanSmoother" href="adda.kalman.smoother.RTSKalmanSmoother.html" />
+    <link rel="prev" title="FixedLagKalmanSmoother" href="adda.kalman.smoother.FixedLagKalmanSmoother.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="kalmansmoother">
+<h1>KalmanSmoother<a class="headerlink" href="#kalmansmoother" title="Link to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="adda.kalman.smoother.KalmanSmoother">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adda.kalman.smoother.</span></span><span class="sig-name descname"><span class="pre">KalmanSmoother</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">initial_mean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="adda.system.state.State.html#adda.system.state.State" title="adda.system.state.State"><span class="pre">State</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="adda.system.state.State.html#adda.system.state.State" title="adda.system.state.State"><span class="pre">State</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">m_dyn</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="adda.system.dynamics.LinearDynamics.html#adda.system.dynamics.LinearDynamics" title="adda.system.dynamics.LinearDynamics"><span class="pre">LinearDynamics</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_error_covariance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/kalman/smoother.html#KalmanSmoother"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.kalman.smoother.KalmanSmoother" title="Link to this definition">¶</a></dt>
+<dd><p>Parent class for all variations of Kalman smoothers.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code>(initial_mean, initial_covariance, ...)</p></td>
+<td><p>Initialize the Kalman smoother.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.analysis_step" title="adda.kalman.smoother.KalmanSmoother.analysis_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analysis_step</span></code></a>(observations_t, obs_op, ...)</p></td>
+<td><p>Perform one analysis step for the mean and variance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.compute_kalman_gain" title="adda.kalman.smoother.KalmanSmoother.compute_kalman_gain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_kalman_gain</span></code></a>(covariance_lag, H, ...)</p></td>
+<td><p>Computes the Kalman gain for the current covariance.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.forecast_step" title="adda.kalman.smoother.KalmanSmoother.forecast_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">forecast_step</span></code></a>(dt)</p></td>
+<td><p>Perform one forecast step for the mean and variance.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.kalman.smoother.KalmanSmoother.analysis_step">
+<span class="sig-name descname"><span class="pre">analysis_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">observations_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_op</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_covariance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/kalman/smoother.html#KalmanSmoother.analysis_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.kalman.smoother.KalmanSmoother.analysis_step" title="Link to this definition">¶</a></dt>
+<dd><p>Perform one analysis step for the mean and variance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.kalman.smoother.KalmanSmoother.compute_kalman_gain">
+<span class="sig-name descname"><span class="pre">compute_kalman_gain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">covariance_lag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_covariance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_inverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/kalman/smoother.html#KalmanSmoother.compute_kalman_gain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.kalman.smoother.KalmanSmoother.compute_kalman_gain" title="Link to this definition">¶</a></dt>
+<dd><p>Computes the Kalman gain for the current covariance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adda.kalman.smoother.KalmanSmoother.forecast_step">
+<span class="sig-name descname"><span class="pre">forecast_step</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/adda/kalman/smoother.html#KalmanSmoother.forecast_step"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#adda.kalman.smoother.KalmanSmoother.forecast_step" title="Link to this definition">¶</a></dt>
+<dd><p>Perform one forecast step for the mean and variance.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="adda.html">adda</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adda.convert.html">convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.ensemble.html">ensemble</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="adda.kalman.html">kalman</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="adda.kalman.filter.html">filter</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="adda.kalman.smoother.html">smoother</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="adda.kalman.smoother.fixed_lag_kalman_smoother.html">fixed_lag_kalman_smoother</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.kalman.smoother.kalman_smoother.html">kalman_smoother</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.kalman.smoother.FixedLagKalmanSmoother.html">FixedLagKalmanSmoother</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">KalmanSmoother</a><ul>
+<li class="toctree-l5"><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother"><code class="docutils literal notranslate"><span class="pre">KalmanSmoother</span></code></a><ul>
+<li class="toctree-l6"><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.analysis_step"><code class="docutils literal notranslate"><span class="pre">analysis_step()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.compute_kalman_gain"><code class="docutils literal notranslate"><span class="pre">compute_kalman_gain()</span></code></a></li>
+<li class="toctree-l6"><a class="reference internal" href="#adda.kalman.smoother.KalmanSmoother.forecast_step"><code class="docutils literal notranslate"><span class="pre">forecast_step()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="adda.kalman.smoother.RTSKalmanSmoother.html">RTSKalmanSmoother</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="adda.observation.html">observation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.probability.html">probability</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.system.html">system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.util.html">util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.variational.html">variational</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="adda.html">adda</a><ul>
+  <li><a href="adda.kalman.html">kalman</a><ul>
+  <li><a href="adda.kalman.smoother.html">smoother</a><ul>
+      <li>Previous: <a href="adda.kalman.smoother.FixedLagKalmanSmoother.html" title="previous chapter">FixedLagKalmanSmoother</a></li>
+      <li>Next: <a href="adda.kalman.smoother.RTSKalmanSmoother.html" title="next chapter">RTSKalmanSmoother</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/adda.kalman.smoother.KalmanSmoother.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

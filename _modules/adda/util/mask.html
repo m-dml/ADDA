@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>adda.util.mask &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../../../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for adda.util.mask</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">adda.system.state</span> <span class="kn">import</span> <span class="n">State</span>
+<span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
+<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
+
+
+<div class="viewcode-block" id="mask_state">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.mask_state.html#adda.util.mask.mask_state">[docs]</a>
+<span class="k">def</span> <span class="nf">mask_state</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">State</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply mask to the system state variable(s)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (State): system state variable(s)</span>
+<span class="sd">        mask (State): mask with boolean. If x has a batch axis and mask does not, the mask will be broadcast.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x_masked</span> <span class="o">=</span> <span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="p">())</span>  <span class="c1"># no batch dimensions after masking</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">x_masked</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">mask</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">*</span><span class="n">mask</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:])]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">x_masked</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="p">[</span><span class="n">mask</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="n">key</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">x_masked</span></div>
+
+
+
+<div class="viewcode-block" id="time_interpolation_of_regular_state">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.time_interpolation_of_regular_state.html#adda.util.mask.time_interpolation_of_regular_state">[docs]</a>
+<span class="k">def</span> <span class="nf">time_interpolation_of_regular_state</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span> <span class="n">time_axis</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TensorDict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linearly interpolates a state x with a regular time axis to an arbitrary time axis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (State): system state variable(s). Should be regularly sampled in time.</span>
+<span class="sd">        time_axis (State): an arbitrary time axis that x should be interpolated to.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dt</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="n">torch</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">atol</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">,</span> <span class="n">rtol</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;input x should be regularly sampled in time. </span><span class="si">{</span><span class="n">dt</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">1e-3</span> <span class="o">*</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;window </span><span class="si">{</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2"> does not contain window </span><span class="si">{</span><span class="p">(</span><span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="w"> </span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">time_axis</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;A marginal part of time_axis is outside the bounds of state.time_axis, probably due to rounding errors.&quot;</span>
+        <span class="p">)</span>
+    <span class="n">x_left_indexes</span> <span class="o">=</span> <span class="p">((</span><span class="n">time_axis</span> <span class="o">-</span> <span class="n">time_axis</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">//</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">x_right_indexes</span> <span class="o">=</span> <span class="n">x_left_indexes</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">x_right_weights</span> <span class="o">=</span> <span class="p">(</span><span class="n">time_axis</span> <span class="o">%</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">dt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">x_left_weights</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">x_right_weights</span>
+    <span class="n">x_left</span><span class="p">,</span> <span class="n">x_right</span> <span class="o">=</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">x_left_indexes</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">x_right_indexes</span><span class="p">]</span>
+    <span class="n">x_left</span><span class="o">.</span><span class="n">time_axis</span><span class="p">,</span> <span class="n">x_right</span><span class="o">.</span><span class="n">time_axis</span> <span class="o">=</span> <span class="n">time_axis</span><span class="p">,</span> <span class="n">time_axis</span>
+    <span class="n">x_interpolated</span> <span class="o">=</span> <span class="n">x_left_weights</span> <span class="o">*</span> <span class="n">x_left</span> <span class="o">+</span> <span class="n">x_right_weights</span> <span class="o">*</span> <span class="n">x_right</span>
+    <span class="k">return</span> <span class="n">x_interpolated</span></div>
+
+
+
+<div class="viewcode-block" id="mask_like">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.mask_like.html#adda.util.mask.mask_like">[docs]</a>
+<span class="k">def</span> <span class="nf">mask_like</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">p_obs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+    <span class="n">constant_obs_count_per_step</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">constant_obs_count</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">State</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate mask like State object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (State): the state from which the size and batch axis are used as reference for the output</span>
+<span class="sd">        p_obs (Dict): a dictionary containing instructions on how to build the mask for each field of x</span>
+<span class="sd">        constant_obs_count_per_step (bool, optional): If True, ensures that every time step has</span>
+<span class="sd">            the same number of masked variables.</span>
+<span class="sd">        constant_obs_count (bool, optional): If True, ensures that the global number of masked variables is fixed.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        State: a state with binary tensor fields, representing a mask with the same fields and time axis as the input x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">m</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_mask</span><span class="p">(</span>
+            <span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">p_obs</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+            <span class="n">constant_obs_count_per_step</span><span class="o">=</span><span class="n">constant_obs_count_per_step</span><span class="p">,</span>
+            <span class="n">constant_obs_count</span><span class="o">=</span><span class="n">constant_obs_count</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">State</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="mask_like_from_tensor">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.mask_like_from_tensor.html#adda.util.mask.mask_like_from_tensor">[docs]</a>
+<span class="k">def</span> <span class="nf">mask_like_from_tensor</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">State</span><span class="p">,</span>
+    <span class="n">td_mask</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">State</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate mask like State object using the observation proportions in td_mask.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        x (State): the state from which the size and batch axis are used as reference for the output</span>
+<span class="sd">        td_mask (Dict): a dictionary (or TensorDict) containing observation probabilities for each field of x</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        State: a state with binary tensor fields, representing a mask with the same fields and time axis as the input x</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">TensorDict</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">x</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">m</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">generate_mask_from_tensor</span><span class="p">(</span>
+            <span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span>
+            <span class="n">td_mask</span><span class="p">[</span><span class="n">key</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">State</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">time_axis</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="generate_mask">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.generate_mask.html#adda.util.mask.generate_mask">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_mask</span><span class="p">(</span>
+    <span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span>
+    <span class="n">p_obs</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">constant_obs_count_per_step</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">constant_obs_count</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a mask for a State object with batch and time axes shared across all fields.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shape: the shape of the mask</span>
+<span class="sd">        p_obs: the proportion of observed variables across the trajectory.</span>
+<span class="sd">        If p_obs is a boolean tensor than it is directly used as the mask.</span>
+<span class="sd">        contant_obs_count_per_step: if this is true, enforces that the number of observed variables remains the same</span>
+<span class="sd">          for each time step. Assumes first axis is time.</span>
+<span class="sd">        constant_obs_count: if this is true, the total number of observed variables is calculated deterministically.</span>
+<span class="sd">          It can still vary for each time step. Applied only if constant_obs_per_step is False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">constant_obs_count_per_step</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">shape</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mf">1e9</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;Attempting to generate a high-dimensional mask, memory issues may occur. &quot;</span>
+                <span class="s2">&quot;If so, try setting constant_obs_count_per_step to False for a less memory-hungry computation, &quot;</span>
+                <span class="s2">&quot;or reducing the number of time steps.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">field_dim</span> <span class="o">=</span> <span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="n">n_obs_per_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">field_dim</span> <span class="o">*</span> <span class="n">p_obs</span><span class="p">)</span>
+        <span class="n">shape_flat</span> <span class="o">=</span> <span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">field_dim</span><span class="p">)</span>
+        <span class="n">sample_indexes</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">shape_flat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">)</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">n_obs_per_step</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">shape_flat</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span><span class="o">.</span><span class="n">scatter_</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">sample_indexes</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">constant_obs_count</span><span class="p">:</span>
+        <span class="n">field_dim</span> <span class="o">=</span> <span class="n">shape</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
+        <span class="n">n_obs</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">p_obs</span> <span class="o">*</span> <span class="n">field_dim</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">field_dim</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">mask</span><span class="p">[:</span><span class="n">n_obs</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">randperm</span><span class="p">(</span><span class="n">field_dim</span><span class="p">)]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">p_obs</span>
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+
+
+<div class="viewcode-block" id="generate_mask_from_tensor">
+<a class="viewcode-back" href="../../../_autosummary/adda.util.mask.generate_mask_from_tensor.html#adda.util.mask.generate_mask_from_tensor">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_mask_from_tensor</span><span class="p">(</span><span class="n">shape</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">],</span> <span class="n">t_mask</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">TensorDict</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a mask for a State object with batch and time axes shared across all fields. If t_mask is a boolean</span>
+<span class="sd">    Tensor then it deterministically builds the mask, otherwise its elements are interpreted as probablities of</span>
+<span class="sd">    observation.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        shape: the shape of the mask</span>
+<span class="sd">        t_mask: a binary tensor used to build the mask</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">shape</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Size</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t_mask</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">),</span> <span class="s2">&quot;argument &#39;t_mask&#39; must be a Tensor&quot;</span>
+    <span class="k">if</span> <span class="n">t_mask</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">t_mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">t_mask</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">t_mask</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;elements of t_mask must be between 0 and 1 but are between </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">t_mask</span><span class="p">)</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">t_mask</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">uniform_samples</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">t_mask</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_mask</span> <span class="o">&gt;</span> <span class="n">uniform_samples</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mask</span></div>
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../index.html">
+              <img class="logo" src="../../../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../../../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/adda.html">adda</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.1.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

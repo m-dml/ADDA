@@ -1,0 +1,31 @@
+MaskedStateObservationSet
+=========================
+
+.. currentmodule:: adda.observation.data
+
+.. autoclass:: MaskedStateObservationSet
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MaskedStateObservationSet.__init__
+      ~MaskedStateObservationSet.restrict_fields
+      ~MaskedStateObservationSet.restrict_time_domain
+      ~MaskedStateObservationSet.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MaskedStateObservationSet.values
+   
+   

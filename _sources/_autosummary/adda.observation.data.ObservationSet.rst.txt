@@ -1,0 +1,29 @@
+ObservationSet
+==============
+
+.. currentmodule:: adda.observation.data
+
+.. autoclass:: ObservationSet
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~ObservationSet.__init__
+      ~ObservationSet.restrict_time_domain
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~ObservationSet.values
+   
+   

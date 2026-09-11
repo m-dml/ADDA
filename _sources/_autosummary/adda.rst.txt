@@ -1,0 +1,41 @@
+﻿adda
+====
+
+
+.. automodule:: adda
+
+    
+    
+    .. rubric:: Modules
+
+    .. autosummary::
+       :toctree:
+       :template: custom-module.rst
+       :recursive:
+    
+       convert
+       ensemble
+       kalman
+       observation
+       probability
+       system
+       util
+       variational
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
