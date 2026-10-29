@@ -1,0 +1,26 @@
+FixedLagKalmanSmoother
+======================
+
+.. currentmodule:: adda.kalman.smoother
+
+.. autoclass:: FixedLagKalmanSmoother
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~FixedLagKalmanSmoother.__init__
+      ~FixedLagKalmanSmoother.analysis_step
+      ~FixedLagKalmanSmoother.assimilate
+      ~FixedLagKalmanSmoother.compute_kalman_gain
+      ~FixedLagKalmanSmoother.forecast_step
+   
+   
+
+   
+   
+   

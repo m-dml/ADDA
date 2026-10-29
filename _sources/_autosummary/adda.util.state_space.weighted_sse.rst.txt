@@ -1,0 +1,6 @@
+weighted\_sse
+=============
+
+.. currentmodule:: adda.util.state_space
+
+.. autofunction:: weighted_sse

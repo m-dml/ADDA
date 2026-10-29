@@ -1,0 +1,6 @@
+generate\_mask\_from\_tensor
+============================
+
+.. currentmodule:: adda.util.mask
+
+.. autofunction:: generate_mask_from_tensor

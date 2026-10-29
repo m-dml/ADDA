@@ -1,0 +1,36 @@
+initialization
+==============
+
+
+.. automodule:: adda.util.initialization
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      fast_initialization
+      fast_initialization_strong_constraint
+      interp_initialization
+      naive_initialization
+   
+   
+
+   
+   
+   
+
+   
+   
+   

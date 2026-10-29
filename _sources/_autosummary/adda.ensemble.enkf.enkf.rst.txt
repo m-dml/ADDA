@@ -1,0 +1,6 @@
+enkf
+====
+
+.. currentmodule:: adda.ensemble.enkf
+
+.. autofunction:: enkf

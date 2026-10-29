@@ -1,0 +1,30 @@
+EnKF
+====
+
+.. currentmodule:: adda.ensemble.enkf
+
+.. autoclass:: EnKF
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EnKF.__init__
+      ~EnKF.analysis_step
+      ~EnKF.analysis_step_no_linearization
+      ~EnKF.assimilate
+      ~EnKF.compute_kalman_gain
+      ~EnKF.compute_kalman_gain_no_linearization
+      ~EnKF.forecast_step
+      ~EnKF.get_ensemble_statistics
+      ~EnKF.initialize_ensemble
+   
+   
+
+   
+   
+   

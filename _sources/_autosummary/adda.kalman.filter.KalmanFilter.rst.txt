@@ -1,0 +1,26 @@
+KalmanFilter
+============
+
+.. currentmodule:: adda.kalman.filter
+
+.. autoclass:: KalmanFilter
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KalmanFilter.__init__
+      ~KalmanFilter.analysis_step
+      ~KalmanFilter.assimilate
+      ~KalmanFilter.compute_kalman_gain
+      ~KalmanFilter.forecast_step
+   
+   
+
+   
+   
+   

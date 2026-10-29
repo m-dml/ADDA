@@ -1,0 +1,35 @@
+data
+====
+
+
+.. automodule:: adda.util.data
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      as_TensorDict
+      impose_batch_size
+      isnumber
+   
+   
+
+   
+   
+   
+
+   
+   
+   

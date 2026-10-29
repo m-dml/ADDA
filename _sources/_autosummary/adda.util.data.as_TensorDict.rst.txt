@@ -1,0 +1,6 @@
+as\_TensorDict
+==============
+
+.. currentmodule:: adda.util.data
+
+.. autofunction:: as_TensorDict

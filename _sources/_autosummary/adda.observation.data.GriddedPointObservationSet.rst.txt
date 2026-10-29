@@ -1,0 +1,29 @@
+GriddedPointObservationSet
+==========================
+
+.. currentmodule:: adda.observation.data
+
+.. autoclass:: GriddedPointObservationSet
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~GriddedPointObservationSet.__init__
+      ~GriddedPointObservationSet.restrict_time_domain
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~GriddedPointObservationSet.values
+   
+   

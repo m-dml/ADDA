@@ -1,0 +1,36 @@
+state\_space
+============
+
+
+.. automodule:: adda.util.state_space
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      allclose
+      rollout
+      same_shape
+      weighted_sse
+   
+   
+
+   
+   
+   
+
+   
+   
+   

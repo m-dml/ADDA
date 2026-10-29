@@ -1,0 +1,6 @@
+fast\_initialization
+====================
+
+.. currentmodule:: adda.util.initialization
+
+.. autofunction:: fast_initialization

@@ -1,0 +1,35 @@
+kalman
+======
+
+
+.. automodule:: adda.kalman
+
+    
+    
+    .. rubric:: Modules
+
+    .. autosummary::
+       :toctree:
+       :template: custom-module.rst
+       :recursive:
+    
+       filter
+       smoother
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   

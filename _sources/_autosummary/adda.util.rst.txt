@@ -1,0 +1,41 @@
+util
+====
+
+
+.. automodule:: adda.util
+
+    
+    
+    .. rubric:: Modules
+
+    .. autosummary::
+       :toctree:
+       :template: custom-module.rst
+       :recursive:
+    
+       data
+       index
+       initialization
+       mask
+       optimization
+       state_space
+       typing
+       visualization
+    
+    
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   

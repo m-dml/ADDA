@@ -1,0 +1,6 @@
+check\_time\_axis
+=================
+
+.. currentmodule:: adda.system.state
+
+.. autofunction:: check_time_axis

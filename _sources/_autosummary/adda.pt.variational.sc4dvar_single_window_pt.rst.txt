@@ -1,0 +1,6 @@
+sc4dvar\_single\_window\_pt
+===========================
+
+.. currentmodule:: adda.pt.variational
+
+.. autofunction:: sc4dvar_single_window_pt

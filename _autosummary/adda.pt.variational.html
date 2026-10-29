@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>variational &#8212; ADDA 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
+    <link rel="stylesheet" type="text/css" href="../_static/basic.css?v=b08954a9" />
+    <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=27fed22d" />
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <link rel="icon" href="../_static/m-dml_logo_dark.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="sc4dvar_single_window_pt" href="adda.pt.variational.sc4dvar_single_window_pt.html" />
+    <link rel="prev" title="pt" href="adda.pt.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-adda.pt.variational">
+<span id="variational"></span><h1>variational<a class="headerlink" href="#module-adda.pt.variational" title="Link to this heading">¶</a></h1>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="adda.pt.variational.sc4dvar_single_window_pt.html#adda.pt.variational.sc4dvar_single_window_pt" title="adda.pt.variational.sc4dvar_single_window_pt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sc4dvar_single_window_pt</span></code></a>(m_dyn, ...[, ...])</p></td>
+<td><p>Strong-constraint 4D-Var for joint state and parameter estimation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="adda.pt.variational.wc4dvar_single_window_pt.html#adda.pt.variational.wc4dvar_single_window_pt" title="adda.pt.variational.wc4dvar_single_window_pt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wc4dvar_single_window_pt</span></code></a>(m_dyn, ...[, ...])</p></td>
+<td><p>Weak-constraint 4D-Var for a single window of observations.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="adda.pt.variational.SC4DVarLoss.html#adda.pt.variational.SC4DVarLoss" title="adda.pt.variational.SC4DVarLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SC4DVarLoss</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Loss function class for strong-constraint 4D-Var.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="adda.pt.variational.WC4DVarLoss.html#adda.pt.variational.WC4DVarLoss" title="adda.pt.variational.WC4DVarLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WC4DVarLoss</span></code></a>(*args, **kwargs)</p></td>
+<td><p>Base object for representing the weak-constraint 4D-Var loss function.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../index.html">
+              <img class="logo" src="../_static/m-dml_logo_banner_cropped.png" alt="Logo of ADDA"/>
+            </a></p>
+<h1 class="logo"><a href="../index.html">ADDA</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Documentation of ADDA</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="adda.html">adda</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="adda.convert.html">convert</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.ensemble.html">ensemble</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.kalman.html">kalman</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.observation.html">observation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.probability.html">probability</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="adda.pt.html">pt</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">variational</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="adda.pt.variational.sc4dvar_single_window_pt.html">sc4dvar_single_window_pt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.pt.variational.wc4dvar_single_window_pt.html">wc4dvar_single_window_pt</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.pt.variational.SC4DVarLoss.html">SC4DVarLoss</a></li>
+<li class="toctree-l4"><a class="reference internal" href="adda.pt.variational.WC4DVarLoss.html">WC4DVarLoss</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="adda.system.html">system</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.util.html">util</a></li>
+<li class="toctree-l2"><a class="reference internal" href="adda.variational.html">variational</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="adda.html">adda</a><ul>
+  <li><a href="adda.pt.html">pt</a><ul>
+      <li>Previous: <a href="adda.pt.html" title="previous chapter">pt</a></li>
+      <li>Next: <a href="adda.pt.variational.sc4dvar_single_window_pt.html" title="next chapter">sc4dvar_single_window_pt</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, m-dml team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 9.2.0</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../_sources/_autosummary/adda.pt.variational.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

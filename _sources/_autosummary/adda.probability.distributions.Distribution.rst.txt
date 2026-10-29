@@ -1,0 +1,30 @@
+Distribution
+============
+
+.. currentmodule:: adda.probability.distributions
+
+.. autoclass:: Distribution
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Distribution.__init__
+      ~Distribution.log_prob
+      ~Distribution.sample
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Distribution.mean
+   
+   

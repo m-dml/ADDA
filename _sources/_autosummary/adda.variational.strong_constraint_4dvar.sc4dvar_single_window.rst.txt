@@ -1,0 +1,6 @@
+sc4dvar\_single\_window
+=======================
+
+.. currentmodule:: adda.variational.strong_constraint_4dvar
+
+.. autofunction:: sc4dvar_single_window

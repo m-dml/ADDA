@@ -1,0 +1,6 @@
+impose\_batch\_sizes
+====================
+
+.. currentmodule:: adda.probability.distributions
+
+.. autofunction:: impose_batch_sizes
