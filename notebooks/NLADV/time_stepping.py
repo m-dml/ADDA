@@ -12,11 +12,11 @@ class TimeIntegrator(torch.nn.Module, ABC):
 
     @abstractmethod
     def _precompute(self):
-        pass
+        """Precompute numerical scheme coefficients."""
 
     @abstractmethod
     def step(self, *args):
-        pass
+        """Perform a single numerical solver time step."""
 
 
 class ETD(TimeIntegrator):

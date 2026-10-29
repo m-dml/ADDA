@@ -8,7 +8,7 @@ from tensordict import TensorDict
 
 
 class EnKS:
-    """Ensemble Kalman Smoother implementation for data assimilation."""
+    """Ensemble Kalman Smoother object."""
 
     def __init__(self, n_members, n_variables, lag, initial_ensemble_std=1.0, inflation=1.0, linearize=True):
         """Initialize the EnKS.
@@ -416,10 +416,10 @@ def enks(
     linearize: bool = True,
     verbose: bool = False,
 ) -> tuple:
-    """Perform ensemble Kalman smoother data assimilation using EnKS.assimilate() method.
+    """Perform ensemble Kalman smoother data assimilation using EnKS. See e.g. section 4.3 from [1] for reference.
 
-    This function is a wrapper around the EnKS.assimilate() method for backwards compatibility
-    and consistent API design.
+    [1] Carrassi, Alberto, et al. "Data assimilation in the geosciences: An overview
+        of methods, issues, and perspectives." Wiley Interdisciplinary Reviews: Climate Change 9.5 (2018): e535.
 
     Args:
         m_dyn (Callable): Model dynamics function

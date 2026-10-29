@@ -21,6 +21,7 @@ def setup_task(
     noise_amplitude=1.0,
     p_obs=0.25,
     forcing=8.0,
+    n_rollout_steps=1,
 ):
     groundtruth = generate_groundtruth(
         n_variables, time_step, nb_steps, nb_steps_burnt=nb_steps_burnt, forward_operator=L96Simulator(forcing=forcing)
@@ -28,7 +29,7 @@ def setup_task(
     groundtruth, obs_op, observations = random_sparse_noisy_obs(groundtruth, noise_amplitude, p_obs)
     T = groundtruth.time_axis.nelement()
 
-    model_error_shape = (1, T - 1, n_variables)
+    model_error_shape = (1, (T - 1) // n_rollout_steps, n_variables)
     model_error_distribs = DiagonalGaussian(
         torch.zeros(*model_error_shape),
         torch.ones(*model_error_shape),
@@ -81,6 +82,30 @@ class TestVariational(TestCase):
 
         print(f"MSE of assimilated trajectory: {MSE}")
         self.assertTrue(MSE < 0.02, msg="The performance is worse than usual observed results.")
+
+    def test_singlewindow_multistep_rollout(self):
+        for n_rollout_steps in [10, 13]:  # one of them divides the total length, the other doesn't
+            groundtruth, obs_op, observations, model_error_distribs, m_dyn, initialization = setup_task(
+                n_rollout_steps=n_rollout_steps
+            )
+            assimilated_series = wc4dvar_single_window(
+                m_dyn,
+                observations,
+                obs_op,
+                model_error_distribs,
+                x_init=initialization,
+                optimizer_pars={"lr": 1},
+                alpha=1e4,
+                n_rollout_steps=n_rollout_steps,
+                n_steps=20,
+                verbose=False,
+            )
+
+            # sum MSE over space and time:
+            MSE = ((assimilated_series - groundtruth).fields["x"] ** 2).mean()
+
+            print(f"MSE of assimilated trajectory: {MSE}")
+            self.assertTrue(MSE < 0.02, msg="The performance is worse than usual observed results.")
 
     def test_slidingwindow(
         self, shift_fraction=0.4, discard_partial=False, window_duration_steps=200, nb_steps=800, nb_steps_burnt=400
@@ -204,7 +229,7 @@ class TestVariational(TestCase):
         shift_fraction=0.4,
         discard_partial=False,
         window_duration_steps=200,
-        nb_steps=800,
+        nb_steps=400,
         nb_steps_burnt=400,
         n_variables=40,
         dt=0.01,

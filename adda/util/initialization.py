@@ -24,8 +24,8 @@ def interp_initialization(observations: ObservationSet, kind="linear", default_v
         return observations.state
     assert isinstance(
         observations, MaskedStateObservationSet
-    ), f"nearest initialization not supported for observations of type {type(observations)}"
-    init = full_like(observations.state.fields, torch.nan)
+    ), f"interp_initialization not supported for observations of type {type(observations)}"
+    init = full_like(observations.state.fields.clone().detach(), torch.nan)
     B, T = observations.state.fields.batch_size
     assert B == 1, f"batching is not supported by interp_initialization but batch size is {B, T}"
     time_axis = observations.state.time_axis
@@ -63,7 +63,8 @@ def interp_initialization(observations: ObservationSet, kind="linear", default_v
 
 def fast_initialization(observations: ObservationSet, default_value=torch.nan, clone=False) -> State:
     """A basic initialization where each variable takes the value of the closest observation in the future. If no future
-    observations are available, the most recent past observation will be used.
+    observations are available, the most recent past observation will be used. The computation time scales mostly with
+    the number of time steps rather than with the number of variables.
 
     Args:
         observations: a set of possibly noisy observations.
@@ -74,8 +75,8 @@ def fast_initialization(observations: ObservationSet, default_value=torch.nan, c
         return observations.state
     assert isinstance(
         observations, MaskedStateObservationSet
-    ), f"naive initialization not supported for observations of type {type(observations)}"
-    init = full_like(observations.state.fields, torch.nan)
+    ), f"fast_initialization not supported for observations of type {type(observations)}"
+    init = full_like(observations.state.fields.clone().detach(), torch.nan)
     B, T = observations.state.fields.batch_size
     assert B == 1, "batching is not supported by naive_initialization"
     with torch.no_grad():
@@ -106,7 +107,8 @@ def fast_initialization(observations: ObservationSet, default_value=torch.nan, c
 
 def fast_initialization_strong_constraint(observations: ObservationSet, default_value=torch.nan, clone=False) -> State:
     """A basic initialization on the first time step of the series only, selecting the first available observation for
-    each variable.
+    each variable. The computation time scales mostly with the number of time steps rather than with the number of
+    variables.
 
     Args:
         observations: a set of possibly noisy observations.

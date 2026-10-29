@@ -162,11 +162,13 @@ def process_4dvar_inputs(
     observations: ObservationSet,
     state_time_axis: Tensor = None,
     model_error_distribs: Distribution = None,
+    n_rollout_steps: int = 1,
     window_duration: Union[float, int] = None,
     window_shift: Union[float, int] = None,
     discard_partial: bool = False,
     rollout_init: bool = True,
     c_proj: Callable = None,
+    param_init: TensorDict = None,
 ) -> Tuple[Tensor, Union[List, Tensor], State, Distribution]:
     """Check/update inputs for 4D-Var routines.
 
@@ -178,6 +180,8 @@ def process_4dvar_inputs(
         x_init (State): first guess for initial state (strong-constraint) or all states (weak-constraint).
           Uses prior mean if None. should have a leading batch dimension, followed by time dimension for weak
             constraint.
+        n_rollout_steps (int, optional): number of steps to rollout for the model error term (weak-constraint).
+          Defaults to 1.
         background_prior (Distribution): prior distribution in initial state
         observations (ObservationSet): observations data to be assimilated
         model_error_distribs (Distribution): distributions of model errors at
@@ -212,6 +216,11 @@ def process_4dvar_inputs(
         assert torch.allclose(
             state_time_axis_dt, state_time_axis_dt[0], atol=1e-6, rtol=1e-3
         ), "For weak-constraint 4D-Var, the state time axis must be regular."
+    else:
+        assert (
+            model_error_distribs is None
+        ), "Argument model_error_distribs should only be used for weak-constraint 4D-Var"
+        assert n_rollout_steps == 1, "Argument n_rollout_steps should only be used for weak-constraint 4D-Var"
     T = state_time_axis.nelement()
 
     assert isinstance(observations, ObservationSet), "Observations must be of type ObservationSet"
@@ -252,7 +261,9 @@ def process_4dvar_inputs(
         x_init = State(background_prior.mean, time_axis=state_time_axis[:1])
 
     if is_weak:
-        model_error_distribs = impose_batch_sizes(model_error_distribs, (1, T - 1), ["mu", "sigma"])
+        model_error_distribs = impose_batch_sizes(
+            model_error_distribs, (1, (T - 1) // n_rollout_steps), ["mu", "sigma"]
+        )
         if c_proj is not None:
             raise ValueError(
                 "projection of the initial state to the model space is"
@@ -260,7 +271,13 @@ def process_4dvar_inputs(
             )
 
         x_init = process_wc4dvar_init(
-            x_init, m_dyn, background_prior, observations, state_time_axis=state_time_axis, rollout_init=rollout_init
+            x_init,
+            m_dyn,
+            background_prior,
+            observations,
+            state_time_axis=state_time_axis,
+            rollout_init=rollout_init,
+            n_rollout_steps=n_rollout_steps,
         )
         if hasattr(model_error_distribs, "mu"):
             assert same_shape(
@@ -268,10 +285,13 @@ def process_4dvar_inputs(
             ), "dimension mismatch between state sequence and model error prior"
     x_init = x_init.detach().clone()  # might need to change this if we're differentiating through the 4D-Var operations
     x_init.fields.requires_grad_(True)
+    if param_init is not None:
+        param_init.fields = param_init.fields.detach().clone()
+        param_init.fields.requires_grad_(True)
 
     dynamic_inputs, static_inputs = process_extra_inputs(dynamic_inputs, static_inputs, state_time_axis)
 
-    return dynamic_inputs, static_inputs, x_init, state_time_axis, windows, idx_ranges, model_error_distribs
+    return dynamic_inputs, static_inputs, x_init, state_time_axis, windows, idx_ranges, model_error_distribs, param_init
 
 
 def process_wc4dvar_init(
@@ -281,6 +301,7 @@ def process_wc4dvar_init(
     observations: ObservationSet,
     state_time_axis: Tensor = None,
     rollout_init: bool = True,
+    n_rollout_steps: int = 1,
     dynamic_inputs: State = None,
     static_inputs: State = None,
 ):
@@ -293,6 +314,7 @@ def process_wc4dvar_init(
         observations (ObservationSet): list of observations at each time point
         state_time_axis (Tensor, optional): The time axis on which the assimilated state should be defined.
         rollout_init (bool): if x_init is just the state at one time steps, decides whether to copy it or roll it out
+        n_rollout_steps (int, optional): number of steps to rollout for the model error term (weak-constraint).
 
     Returns:
         x_init (State): the processed initial state with the right format
@@ -314,7 +336,7 @@ def process_wc4dvar_init(
             "naive initialization failed: some fields/locations have no data. To "
             "solve this problem, provide an x_init or background_prior"
         )
-    return x_init
+    return x_init[:, ::n_rollout_steps]
 
 
 def sliding_window_4dvar(
@@ -379,6 +401,7 @@ def sliding_window_4dvar(
         windows,
         idx_ranges,
         model_error_distribs,
+        _,
     ) = process_4dvar_inputs(
         obs_op,
         m_dyn,

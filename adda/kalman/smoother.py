@@ -16,7 +16,10 @@ def kalman_smoother(
     dynamic_inputs: State = None,
     static_inputs: State = None,
 ):
-    """RTS Kalman smoother.
+    """Rauch–Tung–Striebel (RTS) Kalman smoother. See e.g. section 3.1.2 from [1] for reference.
+
+    [1] Carrassi, Alberto, et al. "Data assimilation in the geosciences: An overview
+        of methods, issues, and perspectives." Wiley Interdisciplinary Reviews: Climate Change 9.5 (2018): e535.
 
     Args:
         m_dyn (LinearDynamics): linear time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs
@@ -54,7 +57,8 @@ def fixed_lag_kalman_smoother(
     dynamic_inputs: State = None,
     static_inputs: State = None,
 ):
-    """Fixed-lag Kalman smoother.
+    """Fixed-lag Kalman smoother. For reference, see e.g. Anderson, B., & Moore, J. B. (1979). Optimal Filtering.
+    Prentice-Hall.
 
     Args:
         m_dyn (LinearDynamics): linear time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs

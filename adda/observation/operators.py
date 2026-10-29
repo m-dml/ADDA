@@ -283,13 +283,15 @@ class MaskedIidGaussianObsOp(ObservationOperator):
         Args:
             x (State): current system state variables
             sample_points (bool): if true, uses a sparse data structure for the observations.
-            mult_precision: a torch dtype for the precision at which to compute the noise
+            mult_precision: a torch dtype for the precision at which to compute the noise. Defaults to torch.float16.
         """
         sample_points = self.sample_points if sample_points is None else sample_points
         if sample_points:  # return a GriddedPointObservationSet, more compact for sparse observations
             raise NotImplementedError
         else:
-            fields = x.fields + torch.randn_like(x.fields, dtype=mult_precision) * self.sigma.fields.to(mult_precision)
+            fields = x.fields + torch.randn_like(x.fields).to(dtype=mult_precision) * self.sigma.fields.to(
+                mult_precision
+            )
             return MaskedStateObservationSet(State(fields, time_axis=x.time_axis), self.mask)
 
     def restrict_time_domain(self, tmin: float, tmax: float):
@@ -501,6 +503,7 @@ def noisy_obs_from_mask(
     obs_noise_sd: Union[State, Tensor, float, int, Dict],
     mask_t: Union[Tensor, TensorDict],
     time_axis=None,
+    mult_precision=torch.float16,
 ) -> Tuple:
     """Generates noisy observations from system state sequence, using the provided mask and noise standard deviation.
 
@@ -509,6 +512,7 @@ def noisy_obs_from_mask(
         obs_noise_sd (Union[State, Tensor, float, int, Dict]): standard deviation of the observation noise
         mask_t (Union[Tensor, TensorDict]): a Tensor containing either boolean values
             or floating values representing the probability of observation for every variable and time step
+        mult_precision: a torch dtype for the precision at which to compute the noise. Defaults to torch.float16.
 
     Returns:
         x: input state sequence, converted to State class
@@ -547,7 +551,7 @@ def noisy_obs_from_mask(
     print(mask)
     obs_op = MaskedIidGaussianObsOp(mask, obs_noise_sd)
 
-    obs = obs_op.sample(x)
+    obs = obs_op.sample(x, mult_precision=mult_precision)
 
     return x, obs_op, obs
 
@@ -559,6 +563,7 @@ def random_sparse_noisy_obs(
     time_axis=None,
     constant_obs_count_per_step: bool = True,
     constant_obs_count: bool = True,
+    mult_precision=torch.float16,
 ) -> Tuple:
     """Generate sparse and noisy observations from system state sequence.
 
@@ -572,6 +577,7 @@ def random_sparse_noisy_obs(
           for each time step. Assumes first axis is time. Defaults to True.
         constant_obs_count: if this is true, the total number of observed variables is calculated deterministically.
           It can still vary for each time step. Applied only if constant_obs_per_step is False. Defaults to True.
+        mult_precision: a torch dtype for the precision at which to compute the noise. Defaults to torch.float16.
 
     Returns:
         x: input state sequence, converted to State class
@@ -614,6 +620,6 @@ def random_sparse_noisy_obs(
 
     obs_op = MaskedIidGaussianObsOp(mask, obs_noise_sd)
 
-    obs = obs_op.sample(x)
+    obs = obs_op.sample(x, mult_precision=mult_precision)
 
     return x, obs_op, obs
