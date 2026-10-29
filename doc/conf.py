@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'ADDA'
+project = "ADDA"
 copyright = "2026, m-dml team"
 author = "m-dml team"
 release = "0.1.0"
@@ -31,7 +31,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    #"seed_intersphinx_mapping",
+    # "seed_intersphinx_mapping",
     "sphinx_typo3_theme",
 ]
 
@@ -59,11 +59,11 @@ autodoc_mock_imports = [
 ]
 
 autodoc_default_options = {
-#     "members": True,
+    #     "members": True,
     "member-order": "groupwise",
-#     "undoc-members": True,
+    #     "undoc-members": True,
     "exclude-members": "__weakref__, __init__",
-#     "show-inheritance": True,
+    #     "show-inheritance": True,
 }
 
 autoclass_content = "class"
@@ -73,17 +73,18 @@ autodoc_inherit_docstrings = False
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-#html_theme = "sphinx_typo3_theme"
+# html_theme = "sphinx_typo3_theme"
 
 # -- Intersphinx options
-#intersphinx_mapping = {
+# intersphinx_mapping = {
 #    "torch": ("https://pytorch.org/docs/stable/", None),
-#}
+# }
 
 html_logo = "images/m-dml_logo_banner_cropped.png"
 html_favicon = "images/m-dml_logo_dark.png"
 
 # -- Custom scripts ----------------------------------------------------------
+
 
 def cleanup():
     """Delete the _autosummary folder before building the documentation."""
@@ -92,6 +93,7 @@ def cleanup():
     print(f"Cleaning up _autosummary folder in {os.getcwd()}")
     shutil.rmtree(os.path.join(os.getcwd(), "_sources", "_autosummary"))
 
+
 def change_content_of_main_generated_index(app, what, name, obj, options, lines):
     """Add text to the main index page."""
     if what == "module":
@@ -99,6 +101,8 @@ def change_content_of_main_generated_index(app, what, name, obj, options, lines)
             lines.insert(0, "API reference for ADDA.")
             print("")
 
+
 def setup(app):
+    """Setup: cleanup and change content of main generated index"""
     cleanup()
     app.connect("autodoc-process-docstring", change_content_of_main_generated_index)

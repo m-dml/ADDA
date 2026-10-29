@@ -27,20 +27,22 @@ class WC4DVarLoss(_Loss):
         static_inputs: State,
         model_error_distribs: Distribution,
         alpha: float = 1.0,
+        n_rollout_steps: int = 1,
         background_prior: Distribution = None,
         normalize: bool = False,
         state_time_axis: Tensor = None,
     ):
-        """Loss for weak constraint 4dvar.
+        """Loss for weak-constraint 4D-Var.
 
         Args:
-            one_step_func (Callable): callable that computes advancement of the state by one time step
-            observations (ObservationSet): observations for each time step
-            obs_op (ObservationOperator): observation operators for each time step
-            dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)
-            static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry)
-            model_error_distribs (Distribution): probability distributions of the model errors at each time step
+            m_dyn (Callable): callable that computes advancement of the state by one time step.
+            observations (ObservationSet): observations for each time step.
+            obs_op (ObservationOperator): observation operators for each time step.
+            dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance).
+            static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry).
+            model_error_distribs (Distribution): probability distributions of the model errors at each time step.
             alpha (float, optional): weighting factor for model error loss term. Defaults to 1.0.
+            n_rollout_steps (int, optional): number of steps to rollout for the model error term. Defaults to 1.
             background_prior (Distribution, optional): prior on initial state. Defaults to None.
             normalize (bool): if True, normalizes the assimilation cost by the number of time steps. Defaults to False.
             state_time_axis (Tensor, optional): The time axis for the optimized x. Has to be regular.
@@ -55,6 +57,7 @@ class WC4DVarLoss(_Loss):
             self.static_inputs,
             self.model_error_distribs,
             self.alpha,
+            self.n_rollout_steps,
             self.background_prior,
             self.normalize,
         ) = (
@@ -65,6 +68,7 @@ class WC4DVarLoss(_Loss):
             static_inputs,
             model_error_distribs,
             alpha,
+            n_rollout_steps,
             background_prior,
             normalize,
         )
@@ -86,20 +90,49 @@ class WC4DVarLoss(_Loss):
         Returns:
             Tensor: loss value, summed over fields and all dimensions, and averaged over the batch
         """
-        self.x.fields = fields
-        x0, x1 = self.x[:, :-1], self.x[:, 1:]
-        x1_pred = self.m_dyn(x0, self.dt, dynamic_inputs=self.dynamic_inputs, static_inputs=self.static_inputs)
+        if self.n_rollout_steps == 1:
+            x = self.x
+            x.fields = fields
+            x0, x1 = x[:, :-1], x[:, 1:]
+        else:
+            self.x.fields = self.x.fields.to(fields.device)
+            x = self.x.clone()
+            x.fields[:, :: self.n_rollout_steps] = fields
+            x0, x1 = x[:, :: self.n_rollout_steps][:, :-1], x[:, :: self.n_rollout_steps][:, 1:]
 
-        logp = 0.0 if self.background_prior is None else self.background_prior.log_prob(self.x.fields[:, :1]).squeeze(1)
-
+        logp = (
+            torch.zeros(
+                1,
+            )
+            if self.background_prior is None
+            else self.background_prior.log_prob(x.fields[:, :1]).squeeze(1)
+        )
         # logp now has only a single singleton batch dimension
 
-        logp = logp + self.obs_op.log_prob(self.x, self.observations).reshape(
+        if self.n_rollout_steps == 1:
+            x1_pred = self.m_dyn(x0, self.dt, dynamic_inputs=self.dynamic_inputs, static_inputs=self.static_inputs)
+        else:
+            for k in range(self.n_rollout_steps - 1):
+                x[:, (k + 1) :: self.n_rollout_steps] = self.m_dyn(
+                    x[:, k : -1 : self.n_rollout_steps],
+                    self.dt,
+                    dynamic_inputs=self.dynamic_inputs[:, k : -1 : self.n_rollout_steps],
+                    static_inputs=self.static_inputs,
+                )
+            x1_pred = self.m_dyn(
+                x[:, self.n_rollout_steps - 1 : -1 : self.n_rollout_steps],
+                self.dt,
+                dynamic_inputs=self.dynamic_inputs[:, k : -1 : self.n_rollout_steps],
+                static_inputs=self.static_inputs,
+            )
+
+        logp = logp + self.obs_op.log_prob(x, self.observations).reshape(
             1,
         )
-        logp += self.alpha * self.model_error_distribs.log_prob(x1_pred.fields - x1.fields).sum(
+        logp = logp + self.alpha * self.model_error_distribs.log_prob(x1_pred.fields - x1.fields).sum(
             axis=1
         )  # sum over time axis
+
         if self.normalize:
             logp /= self.obs_op.time_axis.nelement()
         return -logp.mean(dim=0)  # mean over batch axis
@@ -114,6 +147,7 @@ def wc4dvar_single_window(
     dynamic_inputs: State = None,
     static_inputs: State = None,
     alpha: float = 1.0,
+    n_rollout_steps: int = 1,
     background_prior: Distribution = None,
     normalize: bool = False,
     state_time_axis: Tensor = None,
@@ -124,38 +158,56 @@ def wc4dvar_single_window(
     n_steps: int = 10,
     verbose: bool = False,
     loss_list: list = None,
+    loss_component_list: list = None,
     check_inputs: bool = True,
     rollout_init: bool = True,
+    diagnostic_function: Callable = None,
 ):
-    """Weak constraint 4DVAR for a single window of observations.
+    """Weak-constraint 4D-Var for a single window of observations. See e.g. equation (28) from [1] and equation (9) from
+    [2] for reference. When n_rollout_steps differs from 1, then the scheme is a hybrid between hard- and weak-
+    constraint 4D-Var, following [3].
+
+    [1] Carrassi, Alberto, et al. "Data assimilation in the geosciences: An overview
+        of methods, issues, and perspectives." Wiley Interdisciplinary Reviews: Climate Change 9.5 (2018): e535.
+    [2] Frion, Anthony, et al. "ADDA: a Modular Framework for Representing,
+        Simulating and Assimilating Dynamics with End-to-end Differentiability."
+        arXiv preprint arXiv:2608.23297 (2026).
+    [3] Littaye, Jean, Laurent Memery, and Ronan Fablet.
+        "Solving calibration and reanalysis challenges of ocean biogeochemical dynamics
+        with neural schemes: a 1D vertical model case-study." EGUsphere 2026 (2026): 1-42.
 
     Args:
-        m_dyn: time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs
-        observations (ObservationSet): The set of observations on which to compute the observation error.
-        obs_op (ObservationOperator): The observation operator used to compute the observation error.
-        model_error_distribs: distributions of model errors at each time step
+        m_dyn (Callable): time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs.
+        observations (ObservationSet): the set of observations on which to compute the observation error.
+        obs_op (ObservationOperator): the observation operator used to compute the observation error.
+        model_error_distribs (Distribution): distributions of model errors at each time step.
+            The time dimension must be of size (T-1) // n_rollout_steps with T the size of the state.
         x_init (State): first guess of state trajectory. Uses background prior mean if None. Should have a leading batch
           dimension, followed by a time dimension.
         state_time_axis (Tensor, optional): the time axis for the optimized x. Has to be regular.
-        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)
-        static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry)
+        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance).
+        static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry).
         alpha (float, optional): weighting factor for model error loss term. Defaults to 1.0.
-        background_prior: prior distribution of the initial state, defaults to None.
+        n_rollout_steps (int, optional): number of steps to rollout for the model error term. Defaults to 1.
+        background_prior (Distribution): prior distribution of the initial state, defaults to None.
         normalize (bool): if True, normalizes the assimilation cost by the number of time steps. Defaults to False.
-        state_time_axis (Tensor, optional): The time axis on which the assimilated state should be defined.
+        state_time_axis (Tensor, optional): the time axis on which the assimilated state should be defined.
             If unspecified, uses the time axis of x_init if possible, otherwise the time axis of obs_op.
-        optimizer: class of a pytorch optimizer
-        optimizer_pars: dictionary containing parameters for optimizer (learning rate etc.)
-        n_steps: int indicating the number of optimizer steps
-        verbose (bool): if True, print loss at each iteration. default is False
-        loss_list (list, optional): Has to be empty. If provided, the loss values are inserted in-place.
-        check_inputs: if False, input checking is skipped
-        rollout_init (bool): indicates whether to copy or rollout the input state if it is only one time step
+        optimizer_class (Optimizer): class of a pytorch optimizer.
+        optimizer_pars (dict): dictionary containing parameters for optimizer (learning rate etc.).
+        n_steps (int): indicates the number of optimizer steps.
+        verbose (bool): if True, print loss at each iteration. Default is False.
+        loss_list (list, optional): has to be empty. If provided, the loss values are inserted in-place.
+        loss_component_list (list, optional): Has to be empty.
+            If provided, the loss component values are inserted in-place.
+        check_inputs (bool): if False, input checking is skipped.
+        rollout_init (bool): indicates whether to copy or rollout the input state if it is only one time step.
+        diagnostic_function (Callable): Function to call after each optimization step. Should take *x_i* as input.
     Returns:
-        x0: optimized state trajectory. first dimension is batch, second is time.
+        x0 (State): optimized state trajectory. first dimension is batch, second is time.
     """
     if check_inputs:
-        dynamic_inputs, static_inputs, x_init, state_time_axis, _, _, model_error_distribs = process_4dvar_inputs(
+        dynamic_inputs, static_inputs, x_init, state_time_axis, _, _, model_error_distribs, _ = process_4dvar_inputs(
             obs_op,
             m_dyn,
             dynamic_inputs,
@@ -164,6 +216,7 @@ def wc4dvar_single_window(
             background_prior=background_prior,
             observations=observations,
             model_error_distribs=model_error_distribs,
+            n_rollout_steps=n_rollout_steps,
             state_time_axis=state_time_axis,
             rollout_init=rollout_init,
         )
@@ -175,6 +228,7 @@ def wc4dvar_single_window(
         static_inputs,
         model_error_distribs,
         alpha=alpha,
+        n_rollout_steps=n_rollout_steps,
         background_prior=background_prior,
         normalize=normalize,
         state_time_axis=state_time_axis,
@@ -190,12 +244,26 @@ def wc4dvar_single_window(
         n_steps=n_steps,
         verbose=verbose,
         loss_list=loss_list,
+        loss_component_list=loss_component_list,
+        diagnostic_function=diagnostic_function,
     )
-    return State(fields, time_axis=x_init.time_axis)
+    if n_rollout_steps == 1:
+        return State(fields, time_axis=x_init.time_axis)
+    else:  # rollout from each optimized time step to re-constitute a full State over time
+        full_state = loss.x.clone()
+        full_state.fields[:, ::n_rollout_steps] = fields
+        for k in range(n_rollout_steps - 1):
+            full_state[:, (k + 1) :: n_rollout_steps] = m_dyn(
+                full_state[:, k:-1:n_rollout_steps],
+                loss.dt,
+                dynamic_inputs=loss.dynamic_inputs[:, k:-1:n_rollout_steps],
+                static_inputs=loss.static_inputs,
+            )
+        return full_state
 
 
 def wc4dvar_sliding_window(*args, **kwargs) -> ListOfStates:
-    """Weak constraint 4DVAR for overlapping windows of observations.
+    """Weak constraint 4D-Var for overlapping windows of observations.
 
     Args:
         m_dyn (Callable): time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs
@@ -213,7 +281,7 @@ def wc4dvar_sliding_window(*args, **kwargs) -> ListOfStates:
         dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)
         static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry)
         background_prior (Distribution, optional): background prior for first window. Defaults to None.
-        optimizer_class: class of a pytorch optimizer, default is LBFGS
+        optimizer_class (Optimizer): class of a pytorch optimizer, default is LBFGS
         optimizer_pars (dict): parameters for optimizer (learning rate etc.)
         n_steps (int): the number of optimization steps
         verbose (bool): if True, print loss at each iteration. default is False

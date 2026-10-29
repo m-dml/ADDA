@@ -16,7 +16,10 @@ def kalman_filter(
     dynamic_inputs: State = None,
     static_inputs: State = None,
 ):
-    """Kalman filter.
+    """Kalman filter. See e.g. section 3.1.1 from [1] for reference.
+
+    [1] Carrassi, Alberto, et al. "Data assimilation in the geosciences: An overview
+        of methods, issues, and perspectives." Wiley Interdisciplinary Reviews: Climate Change 9.5 (2018): e535.
 
     Args:
         m_dyn (LinearDynamics): linear time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs

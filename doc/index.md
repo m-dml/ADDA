@@ -1,6 +1,6 @@
 # Documentation example with Sphinx
 
-A small example of how to use Sphinx and MyST 
+A small example of how to use Sphinx and MyST
 to create easily readable and aesthetically pleasing
 documentation.
 

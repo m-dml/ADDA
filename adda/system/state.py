@@ -31,7 +31,7 @@ class State(ABC):
             assert x.ndim >= 2, "State tensor must have batch and time dimensions"
             x = TensorDict(x=x, batch_size=x.shape[:2])
         else:
-            assert isinstance(x, TensorDict), "x must be Tensor or TensorDict"
+            assert isinstance(x, TensorDict), f"x must be Tensor or TensorDict but is {type(x)}"
             for v in x.values():
                 assert isinstance(v, Tensor), "nested TensorDicts are not supported"
                 assert v.ndim >= 2, "each field must have batch and time dimensions"
@@ -117,7 +117,7 @@ class State(ABC):
 
     def requires_grad_(self, requires_grad=True):
         """Returns a copy of the State object in which the chosen grad required is applied to all attributes."""
-        return State(self.fields.requires_grad_(requires_grad), self.time_axis.requires_grad_(requires_grad))
+        return State(self.fields.requires_grad_(requires_grad), self.time_axis)
 
     def fill_(self, val: Union[float, Dict]):
         """Fill values of state trajectory. See fill_ methods of Tensor and TensorDict.
@@ -169,8 +169,8 @@ class State(ABC):
         """Indexed assignement operator for State.
 
         Args:
-            key: indexing key
-            value: values to be assigned
+            key: indexing key. Not to be mistaken with the keys of the fields TensorDict.
+            value: values to be assigned. Must be a Tensor, TensorDict or State.
         """
         if isinstance(key, tuple):
             if len(key) == 0 or len(key) > 2:
@@ -180,7 +180,16 @@ class State(ABC):
                 raise KeyError("only 1 or 2 dims for logical index")
         elif not (isinstance(key, int) or isinstance(key, slice) or (key is Ellipsis)):
             raise KeyError("invalid key")
-        self.fields[key] = value
+        if isinstance(value, State):
+            value = value.fields
+        if isinstance(value, Tensor):
+            dict_keys = [k for k in self.fields.keys()]
+            assert len(dict_keys) == 1, "Only a State with one field can be assigned a Tensor value"
+            self.fields[dict_keys[0]] = value
+        else:
+            assert isinstance(value, TensorDict), f"value must be a Tensor, TensorDict or State, not {type(value)}"
+            for k in value.keys():  # iterating over dictionary keys
+                self.fields[k][key] = value[k]
 
     def __mul__(self, other):
         """Multiplication operator."""

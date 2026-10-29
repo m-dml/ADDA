@@ -38,12 +38,12 @@ class SC4DVarLoss(_Loss):
             objects except dt, which can be a float or Tensor. In general, this will be a user-supplied function that
             describes the known dynamics of a state space model.
             observations (ObservationSet): set of observations to be assimilated.
-            obs_op (ObservationOperator): observation operator used to map between system states and observations
-            dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)
-            static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry)
+            obs_op (ObservationOperator): observation operator used to map between system states and observations.
+            dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance).
+            static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry).
             background_prior (Distribution): prior distribution on initial state. Defaults to None.
             normalize (bool): if True, normalizes the assimilation cost by the number of time steps. Defaults to False.
-            state_time_axis (Tensor): time axis of simulated system states
+            state_time_axis (Tensor): time axis of simulated system states.
             c_proj (Callable): optional projection from control-space fields to model-space fields.
                 It must take and return a TensorDict with batch size (1, 1).
                 The background prior is evaluated in control space before this projection.
@@ -113,37 +113,49 @@ def sc4dvar_single_window(
     n_steps: int = 10,
     verbose: bool = False,
     loss_list: list = None,
+    loss_component_list: list = None,
     check_inputs: bool = True,
     c_proj: Callable = None,
+    diagnostic_function: Callable = None,
 ) -> State:
-    """Strong-constraint 4D-Var for a single window of observations.
+    """Strong-constraint 4D-Var for a single window of observations. See e.g. equation (30) from [1] and equation (10)
+    from [2] for reference.
+
+    [1] Carrassi, Alberto, et al. "Data assimilation in the geosciences: An overview
+        of methods, issues, and perspectives." Wiley Interdisciplinary Reviews: Climate Change 9.5 (2018): e535.
+    [2] Frion, Anthony, et al. "ADDA: a Modular Framework for Representing,
+        Simulating and Assimilating Dynamics with End-to-end Differentiability."
+        arXiv preprint arXiv:2608.23297 (2026).
 
     Args:
-        m_dyn: time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs
-        oobservations (ObservationSet): set of observations to be assimilated.
-        obs_op (ObservationOperator): observation operator used to map between system states and observations
-        x_init (State): first guess of initial state for the first window. uses background prior mean if None.
+        m_dyn (Callable): time stepping operator, taking inputs x, dt, dynamic_inputs, static_inputs.
+        observations (ObservationSet): set of observations to be assimilated.
+        obs_op (ObservationOperator): observation operator used to map between system states and observations.
+        x_init (State): first guess of initial state for the first window. Uses background prior mean if None.
           Should have a leading time dimension of length 1.
         state_time_axis (float, optional): the time axis for the state predictions during optimization.
-        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance)
-        static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry)
-        background_prior (Distribution): prior distribution on initial state
+        dynamic_inputs (State): extra inputs defined for each input state (e.g. TOA incoming solar irradiance).
+        static_inputs (State): extra inputs that don't vary over time (e.g. bathymetry).
+        background_prior (Distribution): prior distribution on initial state.
         normalize (bool): if True, normalizes the assimilation cost by the number of time steps. Defaults to False.
-        optimizer_class: class of a pytorch optimizer, default is LBFGS
+        optimizer_class (Optimizer): class of a pytorch optimizer, default is LBFGS.
         optimizer_pars (dict): parameters for optimizer (learning rate etc.)
-        n_steps (int): the number of optimization steps
-        verbose (bool): if True, print loss at each iteration. default is False
+        n_steps (int): the number of optimization steps.
+        verbose (bool): if True, print loss at each iteration. Default is False.
         loss_list (list, optional): Has to be empty. If provided, the loss values are inserted in-place.
-        check_inputs: if False, input checking is skipped
+        loss_component_list (list, optional): Has to be empty.
+            If provided, the loss component values are inserted in-place.
+        check_inputs (bool): if False, input checking is skipped.
         c_proj (Callable): optional projection from control-space fields to model-space fields.
             It must take and return a TensorDict with batch size (1, 1).
             The background_prior is evaluated in control space before this projection.
+        diagnostic_function (Callable): Function to call after each optimization step. Should take *x_i* as input.
 
     Returns:
         x0 (State): optimized initial state
     """
     if check_inputs:
-        dynamic_inputs, static_inputs, x_init, state_time_axis, _, _, _ = process_4dvar_inputs(
+        dynamic_inputs, static_inputs, x_init, state_time_axis, _, _, _, _ = process_4dvar_inputs(
             obs_op,
             m_dyn,
             dynamic_inputs,
@@ -177,6 +189,8 @@ def sc4dvar_single_window(
         n_steps=n_steps,
         verbose=verbose,
         loss_list=loss_list,
+        loss_component_list=loss_component_list,
+        diagnostic_function=diagnostic_function,
     )
     return State(fields, time_axis=x_init.time_axis)
 

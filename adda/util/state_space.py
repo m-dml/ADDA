@@ -12,20 +12,22 @@ def rollout(
     x0: State,
     dynamic_inputs: State = None,
     static_inputs: State = None,
+    parameters: State = None,
     store_every=None,
 ) -> State:
     """Rollout a time-stepping function over a set of times.
 
     Args:
-        m_dyn (Callable): time stepping function with inputs x, dt, dynamic_inputs, static_inputs
-        x0 (State): initial state, a tensor or tensordict, with a batch dimension
-        output_times (torch.Tensor): times relative to initialization to produce output. must be increasing.
-                                    optionally includes 0.
+        m_dyn (Callable): time stepping function with inputs x, dt, dynamic_inputs, static_inputs.
+        x0 (State): initial state, a tensor or tensordict, with a batch dimension.
+        output_times (torch.Tensor): times relative to initialization to produce output. Must be increasing.
+                                    Optionally includes 0.
         dynamic_inputs (State): extra inputs (e.g. BCs, forcing) for each instance of calling the time
                                     stepping function.
         static_inputs (State): extra inputs (e.g. bathymetry) for each instance of calling the time
                                     stepping function.
-        store_every (int): if specified, indicates at which frequency the states should be stored during the rollout
+        parameters (State): parameters of the dynamical model.
+        store_every (int): if specified, indicates at which frequency the states should be stored during the rollout.
 
     Returns:
         x (State): states at each output time. First dimension is batch, second is time.
@@ -42,7 +44,10 @@ def rollout(
     x_all = [x0] if output_ic else []
     for i, dt in enumerate(dt_all):
         di = dynamic_inputs[:, i : i + 1] if dynamic_inputs is not None else None
-        x = m_dyn(x, dt, di, static_inputs)
+        if parameters is None:
+            x = m_dyn(x, dt, di, static_inputs)
+        else:
+            x = m_dyn(x, dt, di, static_inputs, parameters)
         if store_every is None or (i + 1) % store_every == 0:
             x_all.append(x)
 

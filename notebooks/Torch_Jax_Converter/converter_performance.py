@@ -46,6 +46,7 @@ def jax_fn(x, W, b):
 
 
 def main():
+    """The main function."""
     sizes = [100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600]
     bridged_fwd_times = []
     bridged_fwd_bwd_times = []
@@ -70,6 +71,7 @@ def main():
         b = j2t(b_jax).requires_grad_(False)
 
         def fwd_only():
+            "Forward pass only using torch.no_grad()"
             with torch.no_grad():
                 torch_fn(x, W, b)
 
@@ -78,6 +80,7 @@ def main():
         bridged_fwd_times.append((n, fwd_only_mean))
 
         def fwd_bwd():
+            """Forward and backward pass."""
             x.grad = None
             out = torch_fn(x, W, b)
             out.backward()
@@ -87,6 +90,7 @@ def main():
         bridged_fwd_bwd_times.append((n, fwd_bwd_mean))
 
         def conversion_only():
+            """Convert to jax and back to torch."""
             jx = t2j(x)
             j2t(jx)
 
@@ -99,6 +103,7 @@ def main():
         jit_jax_fn(jx, W_jax, b_jax).block_until_ready()
 
         def pure_jax_fwd():
+            """Forward pass in jax."""
             jit_jax_fn(jx, W_jax, b_jax).block_until_ready()
 
         pure_jax_fwd_time = time_block(pure_jax_fwd)
@@ -107,6 +112,7 @@ def main():
         grad_fn = jax.jit(jax.grad(jax_fn, argnums=0))
 
         def pure_jax_fwd_bwd():
+            """Forward pass and backward pass in jax."""
             g = grad_fn(jx, W_jax, b_jax)
             g.block_until_ready()
 

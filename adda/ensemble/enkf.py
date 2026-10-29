@@ -8,10 +8,7 @@ from adda.system.state import State
 
 
 class EnKF(EnKS):
-    """Ensemble Kalman Filter implementation for data assimilation.
-
-    We consider an EnKF to be nothing more than an EnKS with time lag 1.
-    """
+    """Ensemble Kalman Filter object."""
 
     def __init__(self, n_members, n_variables, initial_ensemble_std=1.0, inflation=1.0, linearize=True):
         """Initialize the EnKF.
@@ -48,10 +45,11 @@ def enkf(
     linearize: bool = True,
     verbose: bool = False,
 ) -> tuple:
-    """Perform ensemble Kalman filter data assimilation using EnKF.assimilate() method.
+    """Perform ensemble Kalman filter data assimilation. We use the "perturbed observations" approach from [1]. In
+    practice, we implement the EnKF as an EnKS with time lag 1.
 
-    This function is a wrapper around the EnKF.assimilate() method for backwards compatibility
-    and consistent API design.
+    [1] Burgers, G., Jan van Leeuwen, P., & Evensen, G. (1998).
+        Analysis scheme in the ensemble Kalman filter. Monthly weather review, 126(6), 1719-1724.
 
     Args:
         m_dyn (Callable): Model dynamics function
