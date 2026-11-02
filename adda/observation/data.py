@@ -1,3 +1,5 @@
+"""Data classes for various types of observations."""
+
 from abc import ABC, abstractmethod
 from typing import List, Tuple
 

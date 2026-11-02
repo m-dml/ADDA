@@ -1,3 +1,5 @@
+"""Ensemble Kalman Filter."""
+
 from typing import Callable, Union
 
 import torch

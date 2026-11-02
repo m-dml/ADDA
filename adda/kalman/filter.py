@@ -1,3 +1,5 @@
+"""Kalman filter."""
+
 import torch
 from adda.kalman.smoother import FixedLagKalmanSmoother
 from adda.observation.data import ObservationSet

@@ -1,3 +1,5 @@
+"""Visualization functions for time series plotting and OSSE presentation."""
+
 import torch
 from matplotlib import pyplot as plt
 

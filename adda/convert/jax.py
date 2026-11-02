@@ -1,3 +1,5 @@
+"""JAX-Torch converter interface for using ADDA with models implemented in JAX."""
+
 import jax
 import torch
 

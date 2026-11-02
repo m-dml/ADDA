@@ -1,3 +1,5 @@
+"""Base functions for strong- and weak-constraint 4D-Var, including input processing and sliding window support."""
+
 import math
 import warnings
 from typing import Callable, List, Tuple, Type, Union

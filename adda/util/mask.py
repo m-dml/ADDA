@@ -1,3 +1,5 @@
+"""Functions for masking system state representations."""
+
 import warnings
 from typing import Dict, List, Tuple, Union
 
