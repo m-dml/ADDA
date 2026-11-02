@@ -1,3 +1,5 @@
+"""ListOfStates type indicator."""
+
 from typing import List
 
 from adda.system.state import State

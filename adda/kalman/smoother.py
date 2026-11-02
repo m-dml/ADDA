@@ -1,3 +1,5 @@
+"""Kalman smoother (RTS or fixed-lag formulations)."""
+
 import torch
 from adda.observation.data import ObservationSet
 from adda.observation.operators import LinearGaussianObsOp

@@ -1,3 +1,5 @@
+"""Weak-constraint 4D-Var formulation (single window)."""
+
 from typing import Callable, Type
 
 import torch

@@ -1,3 +1,5 @@
+"""Probability distribution classes supporting sample generation and log probability computation."""
+
 from abc import ABC, abstractmethod
 from textwrap import indent
 from typing import List

@@ -1,3 +1,5 @@
+"""Operations in state space, including model rollout and operations on TensorDicts."""
+
 from typing import Callable, Union
 
 import torch

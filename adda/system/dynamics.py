@@ -1,3 +1,5 @@
+"""Time stepping operators designed for compatibility with ADDA."""
+
 import torch
 from adda.system.state import State
 from tensordict import TensorDict
@@ -6,7 +8,7 @@ from torch import Tensor
 
 class LinearDynamics:
     """This class implements a linear time stepping operator compatible with the call signature of dynamics functions
-    used by the da-tools package.
+    used by the ADDA package.
 
     Instances of this class act as functions that take inputs x, dt, dynamic_inputs and static_inputs.
     """

@@ -1,3 +1,5 @@
+"""Optimization function to be used by variational methods."""
+
 from typing import Callable, Type, Union
 
 import torch

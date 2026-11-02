@@ -1,3 +1,5 @@
+"""Custom functions for tensor indexing."""
+
 import torch
 from torch import Tensor
 

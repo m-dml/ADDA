@@ -1,3 +1,6 @@
+"""Variational methods for joint state-parameter estimation, including extended versions of strong- and weak-constraint
+4D-Var."""
+
 from typing import Callable, Type
 
 import torch

@@ -1,3 +1,5 @@
+"""Ensemble Kalman Smoother."""
+
 from typing import Callable, Union
 
 import torch

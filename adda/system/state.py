@@ -1,3 +1,5 @@
+"""ADDA state class combining data with a time axis."""
+
 import warnings
 from abc import ABC
 from textwrap import indent
