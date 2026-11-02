@@ -1,0 +1,27 @@
+LinearGaussianObsOp
+===================
+
+.. currentmodule:: adda.observation.operators
+
+.. autoclass:: LinearGaussianObsOp
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~LinearGaussianObsOp.__init__
+      ~LinearGaussianObsOp.conditional_mean
+      ~LinearGaussianObsOp.linearize
+      ~LinearGaussianObsOp.log_prob
+      ~LinearGaussianObsOp.restrict_time_domain
+      ~LinearGaussianObsOp.sample
+   
+   
+
+   
+   
+   

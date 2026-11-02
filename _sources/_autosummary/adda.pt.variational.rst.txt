@@ -1,0 +1,43 @@
+variational
+===========
+
+
+.. automodule:: adda.pt.variational
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      sc4dvar_single_window_pt
+      wc4dvar_single_window_pt
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      SC4DVarLoss
+      WC4DVarLoss
+   
+   
+
+   
+   
+   

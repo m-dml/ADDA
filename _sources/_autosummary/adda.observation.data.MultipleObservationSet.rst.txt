@@ -1,0 +1,29 @@
+MultipleObservationSet
+======================
+
+.. currentmodule:: adda.observation.data
+
+.. autoclass:: MultipleObservationSet
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~MultipleObservationSet.__init__
+      ~MultipleObservationSet.restrict_time_domain
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~MultipleObservationSet.values
+   
+   

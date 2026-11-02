@@ -1,0 +1,6 @@
+assemble\_analysis
+==================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: assemble_analysis

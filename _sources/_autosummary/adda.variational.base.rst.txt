@@ -1,0 +1,38 @@
+base
+====
+
+
+.. automodule:: adda.variational.base
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      assemble_analysis
+      process_4dvar_inputs
+      process_extra_inputs
+      process_wc4dvar_init
+      sliding_window_4dvar
+      sliding_windows
+   
+   
+
+   
+   
+   
+
+   
+   
+   

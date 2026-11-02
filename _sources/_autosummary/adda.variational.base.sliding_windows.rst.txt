@@ -1,0 +1,6 @@
+sliding\_windows
+================
+
+.. currentmodule:: adda.variational.base
+
+.. autofunction:: sliding_windows

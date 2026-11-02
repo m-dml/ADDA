@@ -1,0 +1,39 @@
+State
+=====
+
+.. currentmodule:: adda.system.state
+
+.. autoclass:: State
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~State.__init__
+      ~State.cat
+      ~State.clone
+      ~State.detach
+      ~State.expand_time
+      ~State.fill_
+      ~State.mean_on_batch_axis
+      ~State.n_fields
+      ~State.requires_grad_
+      ~State.restrict_fields
+      ~State.restrict_time_domain
+      ~State.to
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~State.device
+   
+   

@@ -1,0 +1,25 @@
+KalmanSmoother
+==============
+
+.. currentmodule:: adda.kalman.smoother
+
+.. autoclass:: KalmanSmoother
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~KalmanSmoother.__init__
+      ~KalmanSmoother.analysis_step
+      ~KalmanSmoother.compute_kalman_gain
+      ~KalmanSmoother.forecast_step
+   
+   
+
+   
+   
+   

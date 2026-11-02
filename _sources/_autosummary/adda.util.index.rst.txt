@@ -1,0 +1,33 @@
+index
+=====
+
+
+.. automodule:: adda.util.index
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      sorted_index_range
+   
+   
+
+   
+   
+   
+
+   
+   
+   

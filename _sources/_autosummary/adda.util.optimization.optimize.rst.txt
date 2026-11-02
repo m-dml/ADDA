@@ -1,0 +1,6 @@
+optimize
+========
+
+.. currentmodule:: adda.util.optimization
+
+.. autofunction:: optimize

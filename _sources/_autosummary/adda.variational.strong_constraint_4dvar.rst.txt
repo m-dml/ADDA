@@ -1,0 +1,42 @@
+strong\_constraint\_4dvar
+=========================
+
+
+.. automodule:: adda.variational.strong_constraint_4dvar
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      sc4dvar_single_window
+      sc4dvar_sliding_window
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      SC4DVarLoss
+   
+   
+
+   
+   
+   

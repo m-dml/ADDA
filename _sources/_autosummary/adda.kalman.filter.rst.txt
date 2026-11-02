@@ -1,0 +1,41 @@
+filter
+======
+
+
+.. automodule:: adda.kalman.filter
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      kalman_filter
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+      :toctree:
+      :template: custom-class.rst
+   
+      KalmanFilter
+   
+   
+
+   
+   
+   

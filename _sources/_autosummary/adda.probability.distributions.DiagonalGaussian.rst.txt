@@ -1,0 +1,30 @@
+DiagonalGaussian
+================
+
+.. currentmodule:: adda.probability.distributions
+
+.. autoclass:: DiagonalGaussian
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~DiagonalGaussian.__init__
+      ~DiagonalGaussian.log_prob
+      ~DiagonalGaussian.sample
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~DiagonalGaussian.mean
+   
+   

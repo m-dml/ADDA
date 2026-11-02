@@ -1,0 +1,6 @@
+fixed\_lag\_kalman\_smoother
+============================
+
+.. currentmodule:: adda.kalman.smoother
+
+.. autofunction:: fixed_lag_kalman_smoother

@@ -1,0 +1,30 @@
+Gaussian
+========
+
+.. currentmodule:: adda.probability.distributions
+
+.. autoclass:: Gaussian
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~Gaussian.__init__
+      ~Gaussian.log_prob
+      ~Gaussian.sample
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Gaussian.mean
+   
+   

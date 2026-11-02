@@ -1,0 +1,38 @@
+mask
+====
+
+
+.. automodule:: adda.util.mask
+
+    
+    
+    
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+      :toctree:
+      :template: custom-base.rst
+   
+      generate_mask
+      generate_mask_from_tensor
+      mask_like
+      mask_like_from_tensor
+      mask_state
+      time_interpolation_of_regular_state
+   
+   
+
+   
+   
+   
+
+   
+   
+   

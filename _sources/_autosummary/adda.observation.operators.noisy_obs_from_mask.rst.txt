@@ -1,0 +1,6 @@
+noisy\_obs\_from\_mask
+======================
+
+.. currentmodule:: adda.observation.operators
+
+.. autofunction:: noisy_obs_from_mask

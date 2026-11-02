@@ -1,0 +1,30 @@
+EnKS
+====
+
+.. currentmodule:: adda.ensemble.enks
+
+.. autoclass:: EnKS
+   :members:
+
+   
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+   
+      ~EnKS.__init__
+      ~EnKS.analysis_step
+      ~EnKS.analysis_step_no_linearization
+      ~EnKS.assimilate
+      ~EnKS.compute_kalman_gain
+      ~EnKS.compute_kalman_gain_no_linearization
+      ~EnKS.forecast_step
+      ~EnKS.get_ensemble_statistics
+      ~EnKS.initialize_ensemble
+   
+   
+
+   
+   
+   
