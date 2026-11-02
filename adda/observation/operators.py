@@ -289,9 +289,7 @@ class MaskedIidGaussianObsOp(ObservationOperator):
         if sample_points:  # return a GriddedPointObservationSet, more compact for sparse observations
             raise NotImplementedError
         else:
-            fields = x.fields + torch.randn_like(x.fields).to(dtype=mult_precision) * self.sigma.fields.to(
-                mult_precision
-            )
+            fields = x.fields + torch.randn_like(x.fields, dtype=mult_precision) * self.sigma.fields.to(mult_precision)
             return MaskedStateObservationSet(State(fields, time_axis=x.time_axis), self.mask)
 
     def restrict_time_domain(self, tmin: float, tmax: float):

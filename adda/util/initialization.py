@@ -25,7 +25,7 @@ def interp_initialization(observations: ObservationSet, kind="linear", default_v
     assert isinstance(
         observations, MaskedStateObservationSet
     ), f"interp_initialization not supported for observations of type {type(observations)}"
-    init = full_like(observations.state.fields.clone().detach(), torch.nan)
+    init = full_like(observations.state.fields, torch.nan)
     B, T = observations.state.fields.batch_size
     assert B == 1, f"batching is not supported by interp_initialization but batch size is {B, T}"
     time_axis = observations.state.time_axis
@@ -76,7 +76,7 @@ def fast_initialization(observations: ObservationSet, default_value=torch.nan, c
     assert isinstance(
         observations, MaskedStateObservationSet
     ), f"fast_initialization not supported for observations of type {type(observations)}"
-    init = full_like(observations.state.fields.clone().detach(), torch.nan)
+    init = full_like(observations.state.fields, torch.nan)
     B, T = observations.state.fields.batch_size
     assert B == 1, "batching is not supported by naive_initialization"
     with torch.no_grad():
